@@ -1,7 +1,6 @@
+import SideMenuBar from "@/components/SideMenuBar";
 const Home = () => {
-  return (
-    <div>Home</div>
-  )
-}
+  return <div className="min-h-screen w-full"></div>;
+};
 
-export default Home
+export default Home;

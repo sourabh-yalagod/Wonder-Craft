@@ -17,10 +17,10 @@ export const uploadOnCloudinary = async (fileLink) => {
       resource_type: "auto",
       format: fileExtension,
     });
-    // fs.unlinkSync(fileLink);
+    fs.unlinkSync(fileLink);
     return response;
   } catch (error) {
-    // fs.unlinkSync(fileLink);
+    fs.unlinkSync(fileLink);
     return error;
   }
 };
