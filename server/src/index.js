@@ -1,23 +1,35 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
-import imageHanlder from "./routes/image.router.js";
-
-const app = express();
+import { Server } from "socket.io";
+import http from "http";
 const port = 3000;
 
-app.use(cors({origin:"*"}));
+const app = express();
+
+app.use(cors({ origin: "*" }));
 app.use(express.json());
-// app.use(express.static('/src/uploads'))
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const server = http.createServer(app);
+export const io = new Server(server, { cors: true });
 
-app.use(express.static(path.join(__dirname, "uploads")));
+io.on("connection", (socket) => {
+  console.log("A user connected");
+  socket.on("hi", () => {
+    console.log("hi message from the Client");
+  });
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
+});
 
+app.use(express.static("public"));
+
+import imageHanlder from "./routes/image.router.js";
+import videoHanlder from "./routes/video.router.js";
+import { deleteAllImages } from "./utilities/cloudinary.js";
 app.use("/api/images", imageHanlder);
+app.use("/api/videos", videoHanlder);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

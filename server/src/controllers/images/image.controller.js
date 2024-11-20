@@ -3,54 +3,68 @@ import { asycnHandler } from "../../utilities/asyncHandler.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
+import { clearDirectory } from "../../utilities/clearDirectory.js";
+import { io } from "../../index.js";
 
 const imageConvert = asycnHandler(async (req, res) => {
-  const images = req?.files;
+  const images = req.files;
+  const { imageFormate } = req.body;
+  console.log(imageFormate);
+  console.log(images);
+
   if (!images) {
     return res.status(201).json({
       success: true,
       message: "Images not found.",
     });
   }
-  const numberOfImages = images.length;
-  const imgUrls = [];
+
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const publicPath = path.join(__dirname, "../../..", "public");
 
-  console.log(publicPath);
-  images.map((image) => {
-    const fileName = image.originalname.split(".")[0] + ".jpeg";
+  // To store uploaded image URLs
+  const imgUrls = [];
 
-    const joinedPath = `./public/${fileName}`;
+  // Process each image
+  const promises = images?.map((image) => {
+    return new Promise((resolve, reject) => {
+      const fileName = image.originalname.split(".")[0] + imageFormate[0];
+      const outputPath = path.join(publicPath, fileName);
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    exec(`ffmpeg -i ${image.path} ${joinedPath}`, async (error) => {
-      console.log(joinedPath);
-      if (error) {
-        return res.json({
-          message: "Image formate changing process failed.",
-          success: false,
-          error,
-        });
-      }
-      if (!error) {
-        const uploadImage = await uploadOnCloudinary(joinedPath);
-        console.log(`inside`);
-
-        console.log("uploadImage?.url : ", uploadImage?.url);
-        imgUrls.push(uploadImage?.url);
-        if (imgUrls.length == numberOfImages) {
-          res.json({
-            url: imgUrls,
-          });
+      // Convert image to JPEG using ffmpeg
+      exec(`ffmpeg -i "${image.path}" "${outputPath}"`, async (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          try {
+            const uploadImage = await uploadOnCloudinary(outputPath);
+            if (uploadImage) {
+              const imgObj = {
+                name: uploadImage.original_filename,
+                extension: uploadImage.format,
+                url: uploadImage.secure_url,
+              };
+              io.emit("image:converted", { image: uploadImage });
+              imgUrls.push(imgObj);
+            }
+            resolve();
+          } catch (uploadError) {
+            reject(uploadError);
+          }
         }
-      }
+      });
     });
-    console.log(`Outside`);
+  });
+
+  await Promise.allSettled(promises);
+
+  clearDirectory(publicPath);
+  return res.json({
+    success: true,
+    images: imgUrls.length,
+    message: "Images processed and uploaded successfully.",
+    data: imgUrls,
   });
 });
 
