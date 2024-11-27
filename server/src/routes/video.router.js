@@ -1,6 +1,17 @@
 import { Router } from "express";
-import { downloadYtVideo } from "../controllers/videos/video.controller.js";
+import {
+  audioFromVideo,
+  compressVideo,
+  videoFormate,
+  ytUrl,
+} from "../controllers/videos/video.controller.js";
+import { upload } from "../utilities/multer.js";
+upload;
 const router = Router();
 
-router.route("/downlaod-yt-video").post(downloadYtVideo);
+router.route("/yt-url").post(ytUrl);
+router.route("/video-formate").post(upload.single("video"), videoFormate);
+router.route("/video-compressor").post(upload.single("video"), compressVideo);
+router.route("/audio-from-video").post(upload.single("video"), audioFromVideo);
+
 export default router;

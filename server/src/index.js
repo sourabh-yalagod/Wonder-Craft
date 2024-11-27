@@ -26,9 +26,10 @@ app.use(express.static("public"));
 
 import imageHanlder from "./routes/image.router.js";
 import videoHanlder from "./routes/video.router.js";
-import { deleteAllImages } from "./utilities/cloudinary.js";
+import paymentHandlder from "./routes/razerPay.router.js";
 app.use("/api/images", imageHanlder);
 app.use("/api/videos", videoHanlder);
+app.use("/api/payments", paymentHandlder);
 
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

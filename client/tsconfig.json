@@ -8,7 +8,11 @@
       "path": "./tsconfig.node.json"
     }
   ],
+  "include": ["src"],
   "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
