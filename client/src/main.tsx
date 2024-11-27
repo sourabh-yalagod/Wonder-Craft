@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import Layout from "./Layout";
@@ -21,6 +22,7 @@ createRoot(document.getElementById("root")!).render(
           <div className="sm:pl-16 w-full min-h-screen">
             <Layout />
           </div>
+          <Toaster />
         </SocketProvider>
       </BrowserRouter>
     </QueryClientProvider>

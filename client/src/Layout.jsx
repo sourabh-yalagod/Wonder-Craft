@@ -10,11 +10,15 @@ import ResizeVideo from "./pages/ResizeVideo";
 import ChangeVideoFormate from "./pages/ChangeVideoFormate";
 import ConvertImageFormates from "./pages/ConvertImageFormates";
 import AudioFromVideo from "./pages/AudioFromVIdeo";
+import SignIn from "./pages/auth/SignIn";
+import SignUp from "./pages/auth/SignUp";
 
 function Layout() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/create-account" element={<SignUp />} />
+      <Route path="/signin" element={<SignIn />} />
       <Route path="/home" element={<Home />} />
       <Route path="/images" element={<Images />} />
       <Route path="/videos" element={<Videos />} />

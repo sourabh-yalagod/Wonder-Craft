@@ -1,14 +1,29 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthStatus";
 import SideMenuBar from "./SideMenuBar";
 import { ArrowBigLeft, ArrowBigRight, Recycle } from "lucide-react";
 import { ModeToggle } from "./ModeToggler";
+import { auth } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const AppBar = () => {
-  const isAuthenticated = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
-  console.log(location.pathname);
+  const handleAuth = () => {
+    if (isAuthenticated) {
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      toast("user log-out successfully.", { duration: 1.5 });
+    } else {
+      navigate("/signin");
+    }
+  };
+
+  useEffect(() => {
+    setIsAuthenticated(auth());
+  }, [handleAuth]);
 
   return (
     <div
@@ -38,7 +53,7 @@ const AppBar = () => {
       <div className="flex gap-3 items-center">
         <ModeToggle />
         <button
-          onClick={() => navigate(isAuthenticated ? "/signout" : "/signin")}
+          onClick={handleAuth}
           className={`px-2 py-1 rounded-lg text-center text-white ${
             isAuthenticated ? "bg-red-500" : "bg-blue-500"
           }`}

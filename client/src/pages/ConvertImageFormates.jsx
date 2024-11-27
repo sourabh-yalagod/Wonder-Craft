@@ -7,6 +7,9 @@ import { saveAs } from "file-saver";
 import { Loader } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import axios from "axios";
+import { auth } from "@/lib/auth";
+import { toast } from "sonner";
+import Description from "@/components/Description";
 
 const ConvertImageFormates = () => {
   const socket = useSocket();
@@ -17,19 +20,40 @@ const ConvertImageFormates = () => {
   const [inputImageUrls, setInputImageUrls] = useState([]);
   const form = new FormData();
   const set = new Set();
-  const rawImages = new Set();
-  console.log(imageFormate);
+  console.log(images?.length);
 
   const handleImage = async () => {
+    if (images?.length > 1 && !auth()) {
+      toast.warning("create account to process with more then 2 Images.....!");
+      return;
+    }
     Array.from(images || []).forEach((image) => {
       form.append("images", image);
       form.append("imageFormate", imageFormate);
     });
     setResponseUrls([]);
     setLoading(true);
-    const response = await axios.post("/api/images/change-formate", form);
-    setLoading(false);
-    return response;
+    if (images?.length == 1) {
+      const response = await axios.post("/api/images/change-formate", form, {
+        responseType: "blob",
+      });
+      const link = URL.createObjectURL(response.data);
+      console.log(link);
+
+      setResponseUrls([
+        {
+          url: link,
+          name: "image",
+          extension: imageFormate.split(".")[1],
+        },
+      ]);
+      console.log(responseUrls);
+      setLoading(false);
+    } else {
+      const response = await axios.post("/api/images/change-formate", form);
+      setResponseUrls(response.data.data);
+      setLoading(false);
+    }
   };
 
   const handleConvertedImages = (data) => {
@@ -55,17 +79,17 @@ const ConvertImageFormates = () => {
     };
   }, [socket, handleConvertedImages, responseUrls]);
 
-  const mutation = useMutation({
-    mutationFn: handleImage,
-    mutationKey: ["change-image-format"],
-    onSuccess: (response) => {
-      setResponseUrls(response.data.data);
-      console.log("Image format changed successfully:", response.data);
-    },
-    onError: (error) => {
-      console.error("Error changing image format:", error);
-    },
-  });
+  // const mutation = useMutation({
+  //   mutationFn: handleImage,
+  //   mutationKey: ["change-image-format"],
+  //   onSuccess: (response) => {
+  //     setResponseUrls(response.data.data);
+  //     console.log("Image format changed successfully:", response.data);
+  //   },
+  //   onError: (error) => {
+  //     console.error("Error changing image format:", error);
+  //   },
+  // });
 
   const handleDownloadAll = async () => {
     const zip = new JSZip();
@@ -98,7 +122,7 @@ const ConvertImageFormates = () => {
           className="file-input"
         />
         <button
-          onClick={() => images && mutation.mutate()}
+          onClick={() => images && handleImage()}
           className="text-white px-2 py-1 text-[8px] sm:text-xs md:text-sm rounded-lg bg-blue-500 hover:bg-blue-600"
         >
           Upload Images
@@ -120,25 +144,36 @@ const ConvertImageFormates = () => {
       <FormateOptions setFormate={setImageFormate} />
       <div className="py-5 text-xs sm:text-sm md:text-[16px] w-full space-y-2">
         {responseUrls
-          ? responseUrls?.map((image, index) => (
-              <ReadyImage
-                imagename={`${image?.name
-                  ?.slice(0, 20)
-                  .concat("." + image?.extension)}`}
-                link={image?.url}
-                key={index}
-              />
-            ))
+          ? responseUrls?.map((image, index) => {
+              console.log(image);
+
+              return (
+                <ReadyImage
+                  imagename={`${image?.name
+                    ?.slice(0, 20)
+                    .concat("." + image?.extension)}`}
+                  link={image?.url}
+                  key={index}
+                />
+              );
+            })
           : Array.from(inputImageUrls || [])?.map((image, index) => {
               return (
                 <ReadyImage
                   imagename={`Image ${index}`}
-                  link={image}
+                  link={image?.url}
                   key={index}
                 />
               );
             })}
       </div>
+      <Description
+        heading={"Covert Image to any Formate"}
+        paragraph={
+          "Create account for multiple image formate conversion at a time and Public URL.."
+        }
+        img1="../images/youtubeIcon.png"
+      />
     </div>
   );
 };

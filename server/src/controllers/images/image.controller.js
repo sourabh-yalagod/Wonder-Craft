@@ -42,19 +42,28 @@ const imageConvert = asycnHandler(async (req, res) => {
           } else {
             console.log("ress : ", ress);
             try {
-              const uploadImage = await uploadOnCloudinary(outputPath);
-              if (uploadImage) {
-                const imgObj = {
-                  name: uploadImage.original_filename,
-                  extension: uploadImage.format,
-                  url: uploadImage.secure_url,
-                };
-                imgUrls.push(imgObj); // Accumulate each image's details
-                if (!processedImages.has(imgObj)) {
-                  processedImages.add(imgObj);
-                  io.emit("image:converted", { image: imgObj });
+              if (images?.length == 1) {
+                return res.sendFile(outputPath, (error) => {
+                  console.log("res.sendFile", error);
+                  if (!error) {
+                    clearDirectory(publicPath);
+                  }
+                });
+              } else {
+                const uploadImage = await uploadOnCloudinary(outputPath);
+                if (uploadImage) {
+                  const imgObj = {
+                    name: uploadImage.original_filename,
+                    extension: uploadImage.format,
+                    url: uploadImage.secure_url,
+                  };
+                  imgUrls.push(imgObj); // Accumulate each image's details
+                  if (!processedImages.has(imgObj)) {
+                    processedImages.add(imgObj);
+                    io.emit("image:converted", { image: imgObj });
+                  }
+                  console.log("processedImages : ", processedImages);
                 }
-                console.log("processedImages : ",processedImages);
               }
               resolve();
             } catch (uploadError) {

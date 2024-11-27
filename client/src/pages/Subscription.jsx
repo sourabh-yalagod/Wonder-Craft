@@ -32,7 +32,9 @@ const AccountOptions = ({
   setAmount,
   value,
   invokePayment,
+  navigateTo,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="p-3 rounded-xl flex-1 border-2 w-full h-fit space-y-3 hover:scale-95 transition-all">
       <h1 className="font-semibold text-center text-xl sm:text-2xl">
@@ -49,6 +51,7 @@ const AccountOptions = ({
       <button
         onClick={() => {
           setAmount(value);
+          if (navigateTo) navigate(navigateTo);
           if (invokePayment) invokePayment();
         }}
         className="w-full bg-blue-500 p-1 rounded-lg transition-all"
@@ -126,6 +129,7 @@ const Subscription = () => {
           btnText={"Try Demo"}
           setAmount={setAmount}
           features={demoAccountFeatures}
+          navigateTo={"/home"}
         />
         <AccountOptions
           value={0}
@@ -133,6 +137,7 @@ const Subscription = () => {
           btnText={"Free Account"}
           setAmount={setAmount}
           features={freeAccountFeatures}
+          navigateTo={"/create-account"}
         />
         <AccountOptions
           accountType={"Paid"}
