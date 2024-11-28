@@ -1,7 +1,6 @@
 import { useSideMenu } from "@/lib/SideMenuData";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ThemeProvider } from "./theme-provider";
 import { ModeToggle } from "./ModeToggler";
 
 const StickyMenuBar = () => {

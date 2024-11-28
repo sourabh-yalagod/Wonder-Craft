@@ -1,11 +1,13 @@
 import Input from "@/lib/Input";
-import { Lock, Mail, User } from "lucide-react";
-import React from "react";
+import { Loader, Lock, Mail, User, User2Icon } from "lucide-react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { axiosInstance } from "@/lib/AxiosInstance";
 const SignUp = () => {
+  const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
@@ -14,16 +16,21 @@ const SignUp = () => {
   const navigate = useNavigate();
 
   const formHandler = async (data) => {
-    console.log("Form submitted successfully", data);
-    const response = await axios.post(
-      `http://localhost:3000/api/users/create-user`,
-      data
-    );
-    console.log(response.data)
-    console.log(response.data.user.rowCount);
-    
-    if(response.data.user.rowCount){
-      navigate('/signin')
+    try {
+      setLoading(true);
+      console.log(data);
+      const response = await axiosInstance?.post(
+        `/api/users/create-user`,
+        data
+      );
+
+      if (response.data.user.rowCount) {
+        navigate("/signin");
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,8 +38,8 @@ const SignUp = () => {
     <div className="w-full flex justify-center min-h-screen px-3 py-5">
       <div className="w-full mt-16 space-y-5">
         <motion.h1
-          initial={{ y: -200 }}
-          animate={{ y: 0 }}
+          initial={{ y: 400, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ ease: "easeInOut", duration: 1, delay: 0.5 }}
           className="text-center font-semibold text-2xl"
         >
@@ -72,7 +79,7 @@ const SignUp = () => {
               type="submit"
               className="w-full p-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              Submit
+              {loading ? <Loader className="animate-spin mx-auto" /> : "Submit"}
             </button>
             <button
               onClick={() => navigate(-1)}
@@ -86,6 +93,16 @@ const SignUp = () => {
             >
               Reset
             </button>
+          </div>
+          <div
+            onClick={() => navigate("/signin")}
+            className="flex w-full items-center cursor-pointer justify-center gap-2"
+          >
+            <User2Icon className="size-5" />
+            <p>Already have an account</p>
+            <span className="text-blue-800 underline hover:text-blue-700 hover:text-[17px] transition-all">
+              SignIn
+            </span>{" "}
           </div>
         </motion.form>
       </div>

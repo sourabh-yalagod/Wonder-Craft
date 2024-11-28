@@ -197,6 +197,8 @@ const compressVideo = asycnHandler(async (req, res) => {
 });
 
 const audioFromVideo = asycnHandler(async (req, res) => {
+  console.log(req.user);
+  
   try {
     const videoFile = req.file;
 

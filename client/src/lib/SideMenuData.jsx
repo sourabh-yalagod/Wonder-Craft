@@ -3,6 +3,7 @@ import {
   ImageDown,
   Notebook,
   PhoneCall,
+  Store,
   Subscript,
   User2Icon,
   Video,
@@ -18,9 +19,9 @@ export const useSideMenu = () => {
     },
     {
       id: 2,
-      label: "Images",
-      link: "/images",
-      icon: <ImageDown className="size-5 sm:size-6 md:size-7" />,
+      label: "My Store",
+      link: "/store",
+      icon: <Store className="size-5 sm:size-6 md:size-7" />,
     },
     {
       id: 3,

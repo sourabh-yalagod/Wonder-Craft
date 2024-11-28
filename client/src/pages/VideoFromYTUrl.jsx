@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import { motion } from "framer-motion";
 import Description from "@/components/Description";
+import { axiosInstance } from "@/lib/AxiosInstance";
 
 const VideoFromYTUrl = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -27,8 +28,8 @@ const VideoFromYTUrl = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axios.post(
-        `http://localhost:3000/api/videos/yt-url`,
+      const response = await axiosInstance.post(
+        `/api/videos/yt-url`,
         { link: videoUrl },
         {
           headers: { "Content-Type": "application/json" },

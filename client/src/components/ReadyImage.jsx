@@ -3,7 +3,6 @@ import { saveAs } from "file-saver";
 import { Edit } from "lucide-react";
 
 const ReadyImage = ({ imagename = "image-1", link }) => {
-    console.log(link);
     
   const handleDownload = () => {
     saveAs(link, rename ? rename : imagename);
@@ -33,7 +32,7 @@ const ReadyImage = ({ imagename = "image-1", link }) => {
           src={link}
           alt="Image"
         />
-        <p>{rename ? rename : imagename}</p>
+        <p>{rename ? rename: imagename}</p>
         <div
           onClick={() => setInputBox(!inputBox)}
           className="flex items-center gap-1 border p-[2px] rounded-lg cursor-pointer"

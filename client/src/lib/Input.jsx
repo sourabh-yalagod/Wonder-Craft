@@ -2,7 +2,7 @@ import React from "react";
 
 const Input = ({ label, type, icon, register, errors }) => {
   return (
-    <div className="relative text-sm">
+    <div className="relative text-sm space-y-1">
       <label className="font-semibold pl-2 sm:text-[16px]">{label}</label>
       <input
         {...register(label, {

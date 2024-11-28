@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import App from "./App";
 import Home from "./pages/Home";
-import Images from "./pages/Images";
+import Images from "./components/Image";
 import Videos from "./pages/Videos";
 import Subscription from "./pages/Subscription";
 import VideoFromYTUrl from "./pages/VideoFromYTUrl";
@@ -12,6 +12,7 @@ import ConvertImageFormates from "./pages/ConvertImageFormates";
 import AudioFromVideo from "./pages/AudioFromVIdeo";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
+import Store from "./pages/Store";
 
 function Layout() {
   return (
@@ -20,7 +21,7 @@ function Layout() {
       <Route path="/create-account" element={<SignUp />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/home" element={<Home />} />
-      <Route path="/images" element={<Images />} />
+      <Route path="/store" element={<Store />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="/videos/ytURL-to-video" element={<VideoFromYTUrl />} />
       <Route

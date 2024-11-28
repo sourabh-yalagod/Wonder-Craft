@@ -5,6 +5,7 @@ import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
 import { motion } from "framer-motion";
 import ReactPlayer from "react-player";
+import { axiosInstance } from "@/lib/AxiosInstance";
 
 const AudioFromVideo = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -31,8 +32,8 @@ const AudioFromVideo = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axios.post(
-        `http://localhost:3000/api/videos/audio-from-video`,
+      const response = await axiosInstance.post(
+        `/api/videos/audio-from-video`,
         form,
         {
           responseType: "blob",

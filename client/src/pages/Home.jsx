@@ -44,7 +44,6 @@ const videoFeatures = [
 const Home = () => {
   const navigate = useNavigate();
 
-  // Variants for animations
   const cardVariants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: {

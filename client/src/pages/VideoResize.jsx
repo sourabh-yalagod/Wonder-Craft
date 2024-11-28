@@ -3,6 +3,7 @@ import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
+import { axiosInstance } from "@/lib/AxiosInstance";
 
 const VideoResize = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -26,8 +27,8 @@ const VideoResize = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axios.post(
-        `http://localhost:3000/api/videos/yt-url`,
+      const response = await axiosInstance.post(
+        `/api/videos/yt-url`,
         { link: videoUrl },
         {
           headers: { "Content-Type": "application/json" },

@@ -5,8 +5,11 @@ import path from "path";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { clearDirectory } from "../../utilities/clearDirectory.js";
 import { io } from "../../index.js";
+import { connectDB } from "../../db/index.js";
 
 const imageConvert = asycnHandler(async (req, res) => {
+  const user = req.user;
+  const db = await connectDB();
   const images = req.files;
   const { imageFormate } = req.body;
   console.log(imageFormate);
@@ -32,46 +35,46 @@ const imageConvert = asycnHandler(async (req, res) => {
       const outputPath = path.join(publicPath, fileName);
 
       // Convert image to JPEG using ffmpeg
-      exec(
-        `ffmpeg -i "${image.path}" ./public/${fileName}`,
-        async (error, ress) => {
-          if (error) {
-            console.log("error : ", error);
+      exec(`ffmpeg -i "${image.path}" ./public/${fileName}`, async (error) => {
+        if (error) {
+          console.log("error : ", error);
+          reject(error);
+        } else {
+          console.log("images?.length == 1", images?.length == 1);
+          console.log("user.id", user?.id);
+          try {
+            if (images.length == 1 && !user?.id) {
+              return res.sendFile(outputPath, (error) => {
+                if (!error) {
+                  clearDirectory(publicPath);
+                }
+              });
+            } else {
+              console.log("hey man");
 
-            reject(error);
-          } else {
-            console.log("ress : ", ress);
-            try {
-              if (images?.length == 1) {
-                return res.sendFile(outputPath, (error) => {
-                  console.log("res.sendFile", error);
-                  if (!error) {
-                    clearDirectory(publicPath);
-                  }
-                });
-              } else {
-                const uploadImage = await uploadOnCloudinary(outputPath);
-                if (uploadImage) {
-                  const imgObj = {
-                    name: uploadImage.original_filename,
-                    extension: uploadImage.format,
-                    url: uploadImage.secure_url,
-                  };
-                  imgUrls.push(imgObj); // Accumulate each image's details
-                  if (!processedImages.has(imgObj)) {
-                    processedImages.add(imgObj);
-                    io.emit("image:converted", { image: imgObj });
-                  }
-                  console.log("processedImages : ", processedImages);
+              const uploadImage = await uploadOnCloudinary(outputPath);
+              if (uploadImage) {
+                const imgObj = {
+                  name: uploadImage.original_filename,
+                  extension: uploadImage.format,
+                  url: uploadImage.secure_url,
+                };
+                imgUrls.push(imgObj);
+                if (!processedImages.has(imgObj)) {
+                  const imageQuery = await db.query('insert into assets(user_id,images) values($1,$2);',[user?.id,uploadImage?.secure_url])
+                  console.log("imageQuery : ",imageQuery?.rowCount);
+                  
+                  processedImages.add(imgObj);
+                  io.emit("image:converted", { image: imgObj });
                 }
               }
-              resolve();
-            } catch (uploadError) {
-              reject(uploadError);
             }
+            resolve();
+          } catch (uploadError) {
+            reject(uploadError);
           }
         }
-      );
+      });
     });
   });
 

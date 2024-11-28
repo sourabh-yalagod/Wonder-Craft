@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const AppBar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const handleAuth = () => {
@@ -21,9 +21,10 @@ const AppBar = () => {
     }
   };
 
+  
   useEffect(() => {
     setIsAuthenticated(auth());
-  }, [handleAuth]);
+  }, [handleAuth, isAuthenticated]);
 
   return (
     <div
@@ -40,7 +41,7 @@ const AppBar = () => {
           className="cursor-pointer active:animate-spin"
         />
       </div>
-      <div className="flex gap-3 items-center">
+      <div className="gap-3 items-center hidden sm:block sm:flex">
         <ArrowBigLeft
           onClick={() => navigate(-1)}
           className="bg-slate-700 text-white rounded-full size-8 hover:size-9 transition-all p-1"

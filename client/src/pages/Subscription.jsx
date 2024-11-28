@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "@/lib/AxiosInstance";
 
 // Account features
 const freeAccountFeatures = [
@@ -67,8 +68,8 @@ const Subscription = () => {
   const navigate = useNavigate();
   const handlePayment = async () => {
     try {
-      const { data: order } = await axios.post(
-        "http://localhost:3000/api/payments/orders",
+      const { data: order } = await axiosInstance.post(
+        "/api/payments/orders",
         { amount }
       );
 
@@ -82,8 +83,8 @@ const Subscription = () => {
         handler: async (response) => {
           console.log("Payment response : ", response);
 
-          const result = await axios.post(
-            "http://localhost:3000/api/payments/verify",
+          const result = await axiosInstance.post(
+            "/api/payments/verify",
             {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,

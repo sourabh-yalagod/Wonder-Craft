@@ -6,6 +6,7 @@ import Description from "@/components/Description";
 import { motion } from "framer-motion";
 import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
+import { axiosInstance } from "@/lib/AxiosInstance";
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
@@ -33,8 +34,8 @@ const ChangeVideoFormate = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axios.post(
-        `http://localhost:3000/api/videos/video-compressor`,
+      const response = await axiosInstance.post(
+        `/api/videos/video-compressor`,
         form,
         {
           responseType: "blob",

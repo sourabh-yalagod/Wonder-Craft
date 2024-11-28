@@ -2,10 +2,12 @@ import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
 import http from "http";
+import cookieParser from "cookie-parser";
+
 const port = 3000;
 
 const app = express();
-
+app.use(cookieParser());
 // 1732794992
 const expiryTime = 1732794992 * 1000;
 const currentTime = Date.now();
@@ -46,6 +48,7 @@ import imageHanlder from "./routes/image.router.js";
 import videoHanlder from "./routes/video.router.js";
 import paymentHandlder from "./routes/razerPay.router.js";
 import userHandler from "./routes/user.router.js";
+import { validateAuth } from "./middleweres/auth.js";
 
 app.use("/api/images", imageHanlder);
 app.use("/api/videos", videoHanlder);

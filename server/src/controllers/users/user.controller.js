@@ -72,14 +72,38 @@ const signInUser = asycnHandler(async (req, res) => {
     process.env.JWT_SECRETE,
     { expiresIn: process.env.TOKEN_EXPIRY }
   );
-  console.log(token);
+  const option = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000,
+  };
   if (!token) {
     return res.status(400).json({
       message: "Authentication Token generation failed . . . . !",
       success: false,
     });
   }
-  return res.json({ user: user?.rows[0], token });
+  return res
+    .cookie("token", token, option)
+    .json({ user: user?.rows[0], token });
 });
 
-export { createUser, signInUser };
+const userAssets = asycnHandler(async (req, res) => {
+  const db = await connectDB();
+  const user = req.user;
+  if (!user) {
+    return res.status(400).json({
+      message: "user not authenticated . . . !",
+      success: false,
+    });
+  }
+  const userAssets = await db.query(`select * from assets where user_id=$1`, [
+    user.id,
+  ]);
+  return res.json({
+    assets: userAssets?.rows,
+  });
+});
+
+export { createUser, signInUser, userAssets };

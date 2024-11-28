@@ -10,6 +10,7 @@ import axios from "axios";
 import { auth } from "@/lib/auth";
 import { toast } from "sonner";
 import Description from "@/components/Description";
+import { axiosInstance } from "@/lib/AxiosInstance";
 
 const ConvertImageFormates = () => {
   const socket = useSocket();
@@ -23,20 +24,32 @@ const ConvertImageFormates = () => {
   console.log(images?.length);
 
   const handleImage = async () => {
+    setResponseUrls([]);
     if (images?.length > 1 && !auth()) {
-      toast.warning("create account to process with more then 2 Images.....!");
+      toast.warning("Log-In to process with more then 2 Images.....!");
       return;
     }
     Array.from(images || []).forEach((image) => {
       form.append("images", image);
       form.append("imageFormate", imageFormate);
     });
-    setResponseUrls([]);
-    setLoading(true);
-    if (images?.length == 1) {
-      const response = await axios.post("/api/images/change-formate", form, {
-        responseType: "blob",
-      });
+    if (auth()) {
+      setLoading(true);
+      const response = await axiosInstance.post(
+        "/api/images/change-formate",
+        form
+      );
+      setResponseUrls(response.data.data);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      const response = await axiosInstance.post(
+        "/api/images/change-formate",
+        form,
+        {
+          responseType: "blob",
+        }
+      );
       const link = URL.createObjectURL(response.data);
       console.log(link);
 
@@ -48,10 +61,6 @@ const ConvertImageFormates = () => {
         },
       ]);
       console.log(responseUrls);
-      setLoading(false);
-    } else {
-      const response = await axios.post("/api/images/change-formate", form);
-      setResponseUrls(response.data.data);
       setLoading(false);
     }
   };
@@ -78,18 +87,6 @@ const ConvertImageFormates = () => {
       socket.off("image:converted", (data) => handleConvertedImages(data));
     };
   }, [socket, handleConvertedImages, responseUrls]);
-
-  // const mutation = useMutation({
-  //   mutationFn: handleImage,
-  //   mutationKey: ["change-image-format"],
-  //   onSuccess: (response) => {
-  //     setResponseUrls(response.data.data);
-  //     console.log("Image format changed successfully:", response.data);
-  //   },
-  //   onError: (error) => {
-  //     console.error("Error changing image format:", error);
-  //   },
-  // });
 
   const handleDownloadAll = async () => {
     const zip = new JSZip();
@@ -150,7 +147,7 @@ const ConvertImageFormates = () => {
               return (
                 <ReadyImage
                   imagename={`${image?.name
-                    ?.slice(0, 20)
+                    ?.slice(0, 10)
                     .concat("." + image?.extension)}`}
                   link={image?.url}
                   key={index}
