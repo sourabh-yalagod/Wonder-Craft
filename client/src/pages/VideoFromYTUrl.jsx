@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
-import { motion } from "framer-motion";
 import Description from "@/components/Description";
 import { axiosInstance } from "@/lib/AxiosInstance";
 
@@ -53,7 +51,6 @@ const VideoFromYTUrl = () => {
       setLoading(false);
     }
   };
-  console.log(progress);
 
   useEffect(() => {
     socket.on("ytUrl:url:valid", () => setProgress(1));
@@ -66,7 +63,7 @@ const VideoFromYTUrl = () => {
       setErrors(data.message);
       setProgress(-2);
     });
-    socket.on("ytUrl:sendingVideo:valid", () => setProgress(3));
+    socket.on("ytUrl:sendingVideo:valid", () => setProgress(4));
     socket.on("ytUrl:sendingVideo:invalid", (data) => {
       setProgress(-3);
       setErrors(data.message);
@@ -83,7 +80,7 @@ const VideoFromYTUrl = () => {
         setErrors(data.message);
         setProgress(-2);
       });
-      socket.off("ytUrl:sendingVideo:valid", () => setProgress(3));
+      socket.off("ytUrl:sendingVideo:valid", () => setProgress(4));
       socket.off("ytUrl:sendingVideo:invalid", (data) => {
         setProgress(-3);
         setErrors(data.message);

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Loader2 } from "lucide-react";
+import { AwardIcon, Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
 import { motion } from "framer-motion";
 import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
+import { auth } from "@/lib/auth";
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
@@ -34,19 +35,30 @@ const ChangeVideoFormate = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axiosInstance.post(
-        `/api/videos/video-compressor`,
-        form,
-        {
-          responseType: "blob",
-        }
-      );
+      if (auth()) {
+        const { data } = await axiosInstance.post(
+          `/api/videos/video-formate`,
+          form
+        );
+        console.log(data);
+        const link = data?.url;
+        setUrl(link);
+      } else {
+        const response = await axiosInstance.post(
+          `/api/videos/video-formate`,
+          form,
+          {
+            responseType: "blob",
+          }
+        );
 
-      const blob = response.data;
+        const blob = response.data;
 
-      const link = URL.createObjectURL(blob);
-      setUrl(link);
-      localStorage.setItem("urls", link);
+        const link = URL.createObjectURL(blob);
+        console.log("LocalURL : ",link);
+        
+        setUrl(link);
+      }
     } catch (error) {
       console.error(error);
       setErrors("Something went wrong while processing the video.");
@@ -57,8 +69,8 @@ const ChangeVideoFormate = () => {
   console.log(progress);
 
   useEffect(() => {
-    socket.on("videoFormate:file:receive:valid", () => setProgress(1));
-    socket.on("videoFormate:file:receive:invalid", (data) => {
+    socket.on("videoFormate:videoFile:valid", () => setProgress(1));
+    socket.on("videoFormate:videoFile:invalid", (data) => {
       setErrors(data.message);
       setProgress(-1);
     });
@@ -72,25 +84,25 @@ const ChangeVideoFormate = () => {
       setProgress(-3);
       setErrors(data.message);
     });
-    socket.on("videoFormate:done", () => setProgress(4));
+    socket.on("videoFormate:done:valid", () => setProgress(4));
 
     return () => {
-      socket.off("videoFormate:url:valid", () => setProgress(1));
-      socket.off("videoFormate:url:invalid", (data) => {
+      socket.off("videoFormate:videoFile:valid", () => setProgress(1));
+      socket.off("videoFormate:videoFile:invalid", (data) => {
         setErrors(data.message);
         setProgress(-1);
       });
-      socket.off("videoFormate:videoDownlaod:valid", () => setProgress(2));
-      socket.off("videoFormate:videoDownlaod:invalid", (data) => {
+      socket.off("videoFormate:process:valid", () => setProgress(2));
+      socket.off("videoFormate:process:invalid", (data) => {
         setErrors(data.message);
         setProgress(-2);
       });
-      socket.off("videoFormate:sendingVideo:valid", () => setProgress(3));
-      socket.off("videoFormate:sendingVideo:invalid", (data) => {
+      socket.off("videoFormate:sending:valid", () => setProgress(3));
+      socket.off("videoFormate:sending:invalid", (data) => {
         setProgress(-3);
         setErrors(data.message);
       });
-      socket.off("videoFormate:done", () => setProgress(4));
+      socket.off("videoFormate:done:valid", () => setProgress(4));
     };
   }, [socket]);
 

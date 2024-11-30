@@ -1,4 +1,5 @@
 import Image from "@/components/Image";
+import Video from "@/components/Video";
 import { axiosInstance } from "@/lib/AxiosInstance";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
@@ -27,6 +28,9 @@ const Store = () => {
     const allVideos = response?.assets?.filter((asset) => {
       return asset.videos !== null || "";
     });
+    console.log("allVideos : ", allVideos);
+    console.log("allImages : ", allImages);
+
     setImages(allImages);
     setVideos(allVideos);
   }, [response]);
@@ -43,17 +47,34 @@ const Store = () => {
           <p>Username : sourabh</p>
           <p>UserID : urequoiqt</p>
         </div>
-        <div className="grid w-full py-4 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {images?.map((image, index) => {
-            return (
-              <Image
-                key={index}
-                name={`Image ${index + 1}`}
-                url={image?.images}
-              />
-            );
-          })}
-        </div>
+        {images && (
+          <div className="grid w-full py-4 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {images?.map((image, index) => {
+              return (
+                <Image
+                  key={index}
+                  name={`Image ${index + 1}`}
+                  url={image?.images}
+                />
+              );
+            })}
+          </div>
+        )}
+        {videos && (
+          <div className="w-full border-y py-7">
+            <h1 className="font-semibold text-2xl">
+              Browsers only support MP4 Videos
+            </h1>
+            <p className="text-sm text-slate-500">
+              If you can't play the video don't worry you can download it.
+            </p>
+            <div className="grid w-full py-4 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {videos?.map((video, index) => {
+                return <Video key={index} url={video?.videos} />;
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,14 +1,16 @@
 import { asycnHandler } from "../../utilities/asyncHandler.js";
 import { exec } from "child_process";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { io } from "../../index.js";
 import { clearDirectory } from "../../utilities/clearDirectory.js";
+import { connectDB } from "../../db/index.js";
 
 const ytUrl = asycnHandler(async (req, res) => {
   const { link } = req.body;
+  console.log(link);
+
   if (!link) {
     return res
       .status(400)
@@ -17,7 +19,7 @@ const ytUrl = asycnHandler(async (req, res) => {
 
   let videoName = "video.mp4";
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const publicPath = path.join(__dirname, "../../../../public");
+  const publicPath = path.join(__dirname, "../../../public");
 
   exec(`yt-dlp --get-title "${link}"`, (error, title) => {
     if (error) {
@@ -25,10 +27,12 @@ const ytUrl = asycnHandler(async (req, res) => {
         message: "Invalid YouTube URL",
         success: false,
       });
+
       return res.json({ success: false, message: "Invalid YouTube URL" });
     }
-
-    io.emit("ytUrl:url:valid", { title, success: true });
+    if (!error) {
+      io.emit("ytUrl:url:valid", { title, success: true });
+    }
 
     exec(
       `yt-dlp -f mp4 -o "${publicPath}/${videoName}" "${link}"`,
@@ -56,11 +60,13 @@ const ytUrl = asycnHandler(async (req, res) => {
               .status(500)
               .json({ success: false, message: "Failed to send video" });
           }
-          io.emit("ytUrl:sendingVideo:valid", {
-            message: "Video sent successfully",
-            success: true,
-          });
-          clearDirectory(publicPath); // function to delete files in the public directory after sending
+          clearDirectory(publicPath);
+          if (!error) {
+            io.emit("ytUrl:sendingVideo:valid", {
+              message: "Video sent successfully",
+              success: true,
+            });
+          }
         });
       }
     );
@@ -68,47 +74,118 @@ const ytUrl = asycnHandler(async (req, res) => {
 });
 
 const videoFormate = asycnHandler(async (req, res) => {
-  const viderFormate = "mov";
+  const user = req?.user;
+  const viderFormate = req?.body?.formate || ".mp4";
   const videoFile = req.file;
   console.log(videoFile);
   if (!videoFile) {
+    io.emit("videoFormate:videoFile:invalid", {
+      message: "Video File not received by Server . . . !",
+      success: false,
+    });
     return res.json({
       message: "video not available.",
       success: false,
     });
   }
+  if (videoFile.path) {
+    io.emit("videoFormate:videoFile:valid", {
+      message: "Video File received successfully.",
+      success: true,
+    });
+  }
+
   const __dirname = fileURLToPath(import.meta.url);
   const publicPath = path.join(__dirname, "../../../../public");
   console.log(publicPath);
-  const videoName = `${videoFile.filename.split(".")[0]}.${viderFormate}`;
+  const videoName = `${videoFile.filename.split(".")[0]}${viderFormate}`;
   const output = `./public/${videoName}`;
 
   exec(
     `ffmpeg -i ${videoFile.path} ${output}`,
     async (error, stderr, stdout) => {
-      console.log("Error : ", error);
-      console.log("Standard Error : ", stderr);
-      console.log("Standard Output : ", stdout);
+      if (stdout) {
+        io.emit("videoFormate:process:valid", {
+          message: "video formate process under process",
+          success: true,
+        });
+      }
 
       if (error) {
+        io.emit("videoFormate:process:invalid", {
+          message: "video formate process failed. . . . . . !",
+          success: true,
+        });
         console.log(error);
         clearDirectory(publicPath);
-        return res.json({
-          message: "video formate conversion failed",
+        return res.status(500).json({
+          message: "Video format conversion failed",
           success: false,
-          error,
+          error: error.message || stderr,
         });
       } else {
         res.setHeader(
           "Content-Disposition",
           `attachment; filename="${videoName}"`
         );
-        res.sendFile(`${publicPath}/${videoName}`, (error) => {
-          if (error) {
-            console.log("Error : ", error);
-          }
-          clearDirectory(publicPath);
+        io.emit("videoFormate:sending:valid", {
+          message: "processed video is being sent.",
+          success: true,
         });
+        if (user?.id) {
+          try {
+            const uploadVideo = await uploadOnCloudinary(output);
+            console.log("Cloudinary URL: ", uploadVideo.secure_url);
+
+            if (uploadVideo?.secure_url || uploadVideo?.url) {
+              const db = await connectDB();
+              const storeVideos = await db.query(
+                `INSERT INTO assets (user_id, videos) VALUES ($1, $2)`,
+                [user?.id, uploadVideo?.secure_url]
+              );
+              console.log("Stored video info: ", storeVideos?.fields);
+              clearDirectory(publicPath);
+              io.emit("videoFormate:done:valid", {
+                message: "Video formate process Done successfully.",
+                success: true,
+              });
+              return res.status(200).json({
+                message: "Video format converted and uploaded successfully.",
+                success: true,
+                url: uploadVideo.secure_url,
+              });
+            }
+          } catch (uploadError) {
+            console.log("Upload Error : ", uploadError);
+            clearDirectory(publicPath);
+            io.emit("videoFormate:sending:invalid", {
+              message: "Video formate failed.",
+              success: false,
+            });
+            return res.status(500).json({
+              message: "Failed to upload video to Cloudinary",
+              success: false,
+              error: uploadError.message || uploadError,
+            });
+          }
+        } else {
+          return res.sendFile(`${publicPath}/${videoName}`, (error) => {
+            if (error) {
+              console.log("Error sending file: ", error);
+              io.emit("videoFormate:sending:invalid", {
+                message: "Video formate failed.",
+                success: false,
+              });
+            }
+            if (!error) {
+              io.emit("videoFormate:done:valid", {
+                message: "Video formate process Done successfully.",
+                success: true,
+              });
+            }
+            clearDirectory(publicPath);
+          });
+        }
       }
     }
   );
@@ -198,7 +275,7 @@ const compressVideo = asycnHandler(async (req, res) => {
 
 const audioFromVideo = asycnHandler(async (req, res) => {
   console.log(req.user);
-  
+
   try {
     const videoFile = req.file;
 

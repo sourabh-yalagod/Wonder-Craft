@@ -67,8 +67,6 @@ export default function App() {
           </motion.button>
         </div>
       </motion.div>
-
-      {/* Animation Section */}
       <motion.div
         className="flex w-full items-center justify-around py-10"
         initial={{ opacity: 0, x: -100 }}
