@@ -8,7 +8,6 @@ const port = 3000;
 
 const app = express();
 app.use(cookieParser());
-// 1732794992
 const expiryTime = 1732794992 * 1000;
 const currentTime = Date.now();
 
@@ -25,8 +24,7 @@ if (timeRemaining > 0) {
   console.log("The expiry time has passed.");
 }
 
-
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
 
 const server = http.createServer(app);

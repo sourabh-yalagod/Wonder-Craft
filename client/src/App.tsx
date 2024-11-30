@@ -1,14 +1,9 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { auth } from "./lib/auth.js";
 export default function App() {
   const navigate = useNavigate();
-  const autha =  auth();
-  console.log(autha);
-
   return (
     <div className="flex flex-col items-center justify-center h-max bg-gradient-to-r from-blue-300 via-indigo-400 to-purple-400 dark:from-gray-800 dark:via-gray-900 dark:to-blac p-4 absolute inset-0">
-      {/* Header Section */}
       <motion.div
         className="text-center py-14"
         initial={{ opacity: 0, y: -50 }}
