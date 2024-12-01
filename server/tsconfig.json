@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts","index.js", "src/utilities/cloudinary.js", "index.js", "src/utilities/multer.js", "src/routes/image.router.js", "src/controllers/images/image.controller.js", "src/controllers/videos/video.controller.js", "src/db/index.js"]
+  "include": ["src/**/*.ts","index.js", "src/utilities/cloudinary.js", "src/index.js", "src/utilities/multer.js", "src/routes/image.router.js", "src/controllers/images/image.controller.js", "src/controllers/videos/video.controller.js", "src/db/index.js"]
 }

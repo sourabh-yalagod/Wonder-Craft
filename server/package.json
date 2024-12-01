@@ -4,8 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "build": "tsc -b",
+    "start": "nodemon dist/index.js",
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",

@@ -3,7 +3,7 @@ import { exec } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
-import { io } from "../../../index.js";
+import { io } from "../../index.js";
 import { clearDirectory } from "../../utilities/clearDirectory.js";
 import { connectDB } from "../../db/index.js";
 

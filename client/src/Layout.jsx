@@ -2,7 +2,6 @@ import { Route, Routes } from "react-router-dom";
 
 import App from "./App";
 import Home from "./pages/Home";
-import Images from "./components/Image";
 import Videos from "./pages/Videos";
 import Subscription from "./pages/Subscription";
 import VideoFromYTUrl from "./pages/VideoFromYTUrl";
