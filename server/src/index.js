@@ -24,11 +24,16 @@ if (timeRemaining > 0) {
   console.log("The expiry time has passed.");
 }
 
-app.use(cors({ origin: process.env.CORS_URL }));
+app.use(cors({ origin: process.env.CORS_URL, credentials: true }));
 app.use(express.json());
 
 const server = http.createServer(app);
-export const io = new Server(server, { cors: true });
+export const io = new Server(server, {
+  cors: {
+    credentials:true,
+    origin:process.env.CORS_URL
+  }
+});
 
 io.on("connection", (socket) => {
   console.log("A user connected");
