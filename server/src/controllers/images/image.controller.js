@@ -20,7 +20,6 @@ const imageConvert = asycnHandler(async (req, res) => {
       message: "Images not found.",
     });
   }
-  let count = 0;
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const publicPath = path.join(__dirname, "../../..", "public");
@@ -40,10 +39,8 @@ const imageConvert = asycnHandler(async (req, res) => {
           console.log("error : ", error);
           reject(error);
         } else {
-          console.log("images?.length == 1", images?.length == 1);
-          console.log("user.id", user?.id);
           try {
-            if (images.length == 1 && !user?.id) {
+            if (!user?.id) {
               return res.sendFile(outputPath, (error) => {
                 if (!error) {
                   clearDirectory(publicPath);

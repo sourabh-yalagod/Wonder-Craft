@@ -24,7 +24,7 @@ if (timeRemaining > 0) {
   console.log("The expiry time has passed.");
 }
 
-app.use(cors({ origin: process.env.CLIENT_URL }));
+app.use(cors({ origin: process.env.CORS_URL }));
 app.use(express.json());
 
 const server = http.createServer(app);
