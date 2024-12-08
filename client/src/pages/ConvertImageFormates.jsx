@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ReadyImage from "@/components/ReadyImage";
 import FormateOptions from "@/components/FormateOptions";
-import { useMutation } from "@tanstack/react-query";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Loader } from "lucide-react";
 import { useSocket } from "../providers/Socket";
-import axios from "axios";
 import { auth } from "@/lib/auth";
 import { toast } from "sonner";
 import Description from "@/components/Description";
@@ -18,10 +16,10 @@ const ConvertImageFormates = () => {
   const [images, setImages] = useState(null);
   const [responseUrls, setResponseUrls] = useState();
   const [loading, setLoading] = useState(false);
-  const [inputImageUrls, setInputImageUrls] = useState([]);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
   const form = new FormData();
   const set = new Set();
-  console.log(images?.length);
 
   const handleImage = async () => {
     setResponseUrls([]);
@@ -32,6 +30,8 @@ const ConvertImageFormates = () => {
     Array.from(images || []).forEach((image) => {
       form.append("images", image);
       form.append("imageFormate", imageFormate);
+      form.append("width", width);
+      form.append("height", height);
     });
     if (auth()) {
       setLoading(true);
@@ -89,6 +89,8 @@ const ConvertImageFormates = () => {
   }, [socket, handleConvertedImages, responseUrls]);
 
   const handleDownloadAll = async () => {
+    console.log(responseUrls);
+    if (!responseUrls?.length) return;
     const zip = new JSZip();
     const imagePromises = responseUrls?.map(async (image) => {
       console.log(image.url);
@@ -120,57 +122,95 @@ const ConvertImageFormates = () => {
         />
         <button
           onClick={() => images && handleImage()}
-          className="text-white px-2 py-1 text-[8px] sm:text-xs md:text-sm rounded-lg bg-blue-500 hover:bg-blue-600"
+          className="text-white px-2 py-1 transition-all text-[8px] sm:text-xs md:text-sm rounded-lg bg-blue-500 hover:bg-blue-600"
         >
           Upload Images
         </button>
       </div>
-      <div className="flex justify-between my-4">
+      <div className="flex justify-between my-4 border p-2 rounded-xl">
         <p>Total Images: {images?.length}</p>
-        {responseUrls && (
-          <button
-            onClick={handleDownloadAll}
-            className="text-white px-2 py-1 text-[8px] sm:text-sm rounded-lg bg-blue-500 hover:bg-blue-600"
-          >
-            <p>
-              {loading ? <Loader className="animate-spin" /> : "Download All"}
-            </p>
-          </button>
+        {images?.length ? (
+          <div className="flex gap-2">
+            <button
+              onClick={handleDownloadAll}
+              className="text-white px-2 py-1 text-[8px] sm:text-sm rounded-lg bg-blue-500 hover:bg-blue-600"
+            >
+              <p>
+                {loading ? <Loader className="animate-spin" /> : "Download All"}
+              </p>
+            </button>
+            {responseUrls?.length ? (
+              <button
+                onClick={() => {
+                  setResponseUrls([]);
+                  setImages("");
+                }}
+                className="text-white px-2 py-1 text-[8px] sm:text-sm rounded-lg bg-red-500 hover:bg-red-600"
+              >
+                Clear
+              </button>
+            ) : (
+              ""
+            )}
+          </div>
+        ) : (
+          ""
         )}
       </div>
-      <FormateOptions setFormate={setImageFormate} />
-      <div className="py-5 text-xs sm:text-sm md:text-[16px] w-full space-y-2">
-        {responseUrls
-          ? responseUrls?.map((image, index) => {
-              console.log(image);
-
-              return (
-                <ReadyImage
-                  imagename={`${image?.name
-                    ?.slice(0, 10)
-                    .concat("." + image?.extension)}`}
-                  link={image?.url}
-                  key={index}
-                />
-              );
-            })
-          : Array.from(inputImageUrls || [])?.map((image, index) => {
-              return (
-                <ReadyImage
-                  imagename={`Image ${index}`}
-                  link={image?.url}
-                  key={index}
-                />
-              );
-            })}
+      <div>
+        <div className="w-full sm:flex sm:space-y-0 space-y-3 p-2 gap-4 items-center border rounded-xl">
+          <div className="flex w-full items-center gap-2 text-sm">
+            <label>width </label>
+            <input
+              className="outline-none w-full"
+              onChange={(e) => setWidth(e.target.value)}
+              min={0}
+              max={100}
+              defaultValue={0}
+              type="range"
+            />
+            <label>{width + "%"}</label>
+          </div>
+          <div className="flex w-full items-center gap-2 text-sm">
+            <label>Height</label>
+            <input
+              defaultValue={0}
+              className="outline-none w-full"
+              onChange={(e) => setHeight(e.target.value)}
+              min={0}
+              max={100}
+              type="range"
+            />
+            <label>{height}%</label>
+          </div>
+        </div>
+        <FormateOptions setFormate={setImageFormate} />
       </div>
-      <Description
-        heading={"Covert Image to any Formate"}
-        paragraph={
-          "Create account for multiple image formate conversion at a time and Public URL.."
-        }
-        img1="../images/youtubeIcon.png"
-      />
+      <div className="py-5 text-xs sm:text-sm md:text-[16px] w-full space-y-2">
+        {responseUrls?.length ? (
+          responseUrls?.map((image, index) => {
+            console.log(image);
+
+            return (
+              <ReadyImage
+                imagename={`${image?.name
+                  ?.slice(0, 10)
+                  .concat("." + image?.extension)}`}
+                link={image?.url}
+                key={index}
+              />
+            );
+          })
+        ) : (
+          <Description
+            heading={"Covert Image to any Formate"}
+            paragraph={
+              "Create account for multiple image formate conversion at a time and Public URL.."
+            }
+            img1="../images/youtubeIcon.png"
+          />
+        )}
+      </div>
     </div>
   );
 };

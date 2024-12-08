@@ -58,7 +58,8 @@ const signInUser = asycnHandler(async (req, res) => {
       .status(400)
       .json({ message: "user not found please create a new account . . . !" });
   }
-
+  console.log(user?.rows[0]);
+  
   const passwordCheck = await bcrypt.compare(Password, user?.rows[0].password);
   if (!passwordCheck) {
     return res.status(400).json({ message: "invalid password . . . !" });

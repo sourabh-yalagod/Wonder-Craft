@@ -8,24 +8,10 @@ const port = 3000;
 
 const app = express();
 app.use(cookieParser());
-const expiryTime = 1732794992 * 1000;
-const currentTime = Date.now();
-
-const timeRemaining = expiryTime - currentTime;
-
-if (timeRemaining > 0) {
-  const seconds = Math.floor((timeRemaining / 1000) % 60);
-  const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
-  const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
-  const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-
-  console.log(`Time remaining: ${days}d ${hours}h ${minutes}m ${seconds}s`);
-} else {
-  console.log("The expiry time has passed.");
-}
 
 app.use(cors({ origin: process.env.CORS_URL, credentials: true }));
 app.use(express.json());
+app.use(express.static("public"));
 
 const server = http.createServer(app);
 export const io = new Server(server, {
@@ -45,7 +31,6 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(express.static("public"));
 
 import imageHanlder from "./routes/image.router.js";
 import videoHanlder from "./routes/video.router.js";
