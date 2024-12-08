@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { clearDirectory } from "../../utilities/clearDirectory.js";
-import { io } from "../../index.js";
+import { io } from "../../../index.js";
 import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";

@@ -32,11 +32,11 @@ io.on("connection", (socket) => {
 });
 
 
-import imageHanlder from "./routes/image.router.js";
-import videoHanlder from "./routes/video.router.js";
-import paymentHandlder from "./routes/razerPay.router.js";
-import userHandler from "./routes/user.router.js";
-import { validateAuth } from "./middleweres/auth.js";
+import imageHanlder from "./src/routes/image.router.js";
+import videoHanlder from "./src/routes/video.router.js";
+import paymentHandlder from "./src/routes/razerPay.router.js";
+import userHandler from "./src/routes/user.router.js";
+import { validateAuth } from "./src/middleweres/auth.js";
 
 app.use("/api/images", imageHanlder);
 app.use("/api/videos", videoHanlder);
