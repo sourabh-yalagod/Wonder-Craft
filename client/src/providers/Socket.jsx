@@ -8,7 +8,7 @@ const useSocket = () => {
   return socket;
 };
 const SocketProvider = ({ children }) => {
-  const socket = useMemo(() => io("localhost:3000"));
+  const socket = useMemo(() => io(import.meta.env.VITE_API_URL));
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );

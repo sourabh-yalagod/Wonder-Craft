@@ -15,10 +15,10 @@ app.use(express.json());
 
 const server = http.createServer(app);
 export const io = new Server(server, {
-  cors: {
-    credentials: true,
-    origin: process.env.CORS_URL,
-  },
+  cors:{
+    origin:process.env.CORS_URL,
+    credentials:true
+  }
 });
 
 io.on("connection", (socket) => {
