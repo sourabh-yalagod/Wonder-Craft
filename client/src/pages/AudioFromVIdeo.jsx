@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
 import { motion } from "framer-motion";
-import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
 
 const AudioFromVideo = () => {
@@ -15,6 +13,7 @@ const AudioFromVideo = () => {
   const [progress, setProgress] = useState(0);
   const form = new FormData();
   const socket = useSocket();
+
   const handleVideoUrl = async (e) => {
     setUrl("");
     e.preventDefault();
@@ -34,22 +33,12 @@ const AudioFromVideo = () => {
 
       const response = await axiosInstance.post(
         `/api/videos/audio-from-video`,
-        form,
-        {
-          responseType: "blob",
-        }
+        form
       );
 
-      const blob = response.data;
-      console.log(blob);
-
-      if (blob.type.includes("audio")) {
-        const link = URL.createObjectURL(blob);
-        setUrl(link);
-        localStorage.setItem("urls", link);
-      } else {
-        setUrl("");
-      }
+      const link = response.data.url;
+      console.log(link);
+      setUrl(link);
     } catch (error) {
       console.error(error);
       setErrors("Something went wrong while processing the video.");
@@ -57,7 +46,6 @@ const AudioFromVideo = () => {
       setLoading(false);
     }
   };
-  console.log(progress);
 
   useEffect(() => {
     socket.on("audio:videoFile:valid", () => setProgress(1));

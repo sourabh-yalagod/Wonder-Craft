@@ -12,6 +12,7 @@ import AudioFromVideo from "./pages/AudioFromVIdeo";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import Store from "./pages/Store";
+import About from "./pages/About";
 
 function Layout() {
   return (
@@ -22,6 +23,7 @@ function Layout() {
       <Route path="/home" element={<Home />} />
       <Route path="/store" element={<Store />} />
       <Route path="/videos" element={<Videos />} />
+      <Route path="/about" element={<About />} />
       <Route path="/videos/ytURL-to-video" element={<VideoFromYTUrl />} />
       <Route
         path="/videos/change-video-formate"

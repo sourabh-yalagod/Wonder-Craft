@@ -18,7 +18,7 @@ const ResizeVideo = () => {
   const socket = useSocket();
 
   const handleVideo = async (e) => {
-    setUrl('')
+    setUrl("");
     e.preventDefault();
     setErrors("");
 
@@ -76,6 +76,9 @@ const ResizeVideo = () => {
       setErrors(data.message);
     });
     socket.on("resizeVideo:done", () => setProgress(4));
+    socket.on("resizeVideo:process:percentage", (data) =>
+      console.log("resizeVideo:process:percentage : ", data)
+    );
 
     return () => {
       socket.off("resizeVideo:file:receive:valid", () => setProgress(1));

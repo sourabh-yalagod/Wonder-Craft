@@ -33,36 +33,13 @@ const ConvertImageFormates = () => {
       form.append("width", width);
       form.append("height", height);
     });
-    if (auth()) {
-      setLoading(true);
-      const response = await axiosInstance.post(
-        "/api/images/change-formate",
-        form
-      );
-      setResponseUrls(response.data.data);
-      setLoading(false);
-    } else {
-      setLoading(true);
-      const response = await axiosInstance.post(
-        "/api/images/change-formate",
-        form,
-        {
-          responseType: "blob",
-        }
-      );
-      const link = URL.createObjectURL(response.data);
-      console.log(link);
-
-      setResponseUrls([
-        {
-          url: link,
-          name: "image",
-          extension: imageFormate.split(".")[1],
-        },
-      ]);
-      console.log(responseUrls);
-      setLoading(false);
-    }
+    setLoading(true);
+    const response = await axiosInstance.post(
+      "/api/images/change-formate",
+      form
+    );
+    setResponseUrls(response.data.data);
+    setLoading(false);
   };
 
   const handleConvertedImages = (data) => {

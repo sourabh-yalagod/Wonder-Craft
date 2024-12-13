@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
-import { auth } from "@/lib/auth";
+
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
@@ -18,6 +18,7 @@ const ChangeVideoFormate = () => {
   const socket = useSocket();
   const [formate, setFormate] = useState(".mp4");
   console.log(formate);
+  
   const handleVideoUrl = async (e) => {
     e.preventDefault();
     setErrors("");
@@ -34,31 +35,18 @@ const ChangeVideoFormate = () => {
       console.log(form);
       setLoading(true);
       setProgress(0);
+      const response = await axiosInstance.post(
+        `/api/videos/video-formate`,
+        form
+      );
 
-      if (auth()) {
-        const { data } = await axiosInstance.post(
-          `/api/videos/video-formate`,
-          form
-        );
-        console.log(data);
-        const link = data?.url;
-        setUrl(link);
-      } else {
-        const response = await axiosInstance.post(
-          `/api/videos/video-formate`,
-          form,
-          {
-            responseType: "blob",
-          }
-        );
+      const link = response.data.url;
 
-        const blob = response.data;
-
-        const link = URL.createObjectURL(blob);
-        console.log("LocalURL : ",link);
-        
-        setUrl(link);
+      console.log("URL : ", link);
+      if (link) {
+        setProgress(4);
       }
+      setUrl(link);
     } catch (error) {
       console.error(error);
       setErrors("Something went wrong while processing the video.");

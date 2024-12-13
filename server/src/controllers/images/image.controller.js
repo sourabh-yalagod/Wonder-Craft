@@ -1,27 +1,22 @@
 import { asycnHandler } from "../../utilities/asyncHandler.js";
-import { fileURLToPath } from "url";
-import path from "path";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
-import { clearDirectory } from "../../utilities/clearDirectory.js";
 import { io } from "../../../index.js";
 import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 import fs from "fs";
+import { clearDirectory } from "../../utilities/clearDirectory.js";
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
 const imageConvert = asycnHandler(async (req, res) => {
   const user = req.user;
   const db = await connectDB();
-  const images = req.files;
+  const images = req.files; // Multer adds files to req.files
   const { imageFormate, height, width } = req.body;
-  console.log(height, width);
-  
-  const scale = `${height}:${width}`;
-  console.log(scale);
-
-  const format = images.length === 1 ? imageFormate : imageFormate[0];
+  const format = Array.isArray(imageFormate) ? imageFormate[0] : imageFormate;
+  console.log("format : ", format);
+  console.log("imageFormate : ", imageFormate);
 
   if (!images || images.length === 0) {
     return res.status(400).json({
@@ -30,37 +25,28 @@ const imageConvert = asycnHandler(async (req, res) => {
     });
   }
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const publicPath = path.join(__dirname, "../../..", "public");
-
-  if (!fs.existsSync(publicPath)) {
-    fs.mkdirSync(publicPath, { recursive: true });
-  }
-
+  const scale = width && height ? `-vf scale=iw*${width / 100}:ih*${height / 100}` : null;
   const imgUrls = [];
   const processedImages = new Set();
 
-  const promises = images?.map((image) => {
+  const promises = images.map((image) => {
     return new Promise((resolve, reject) => {
       const inputPath = image.path;
-      const fileName = image.originalname.split(".")[0] + `${format}`;
-      const outputPath = path.join(publicPath, fileName);
-      console.log("outputPath : ", outputPath);
+
+      console.log(`./public/${image.originalname.split(".")[0]}${format}`);
+
+      const outputPath = `./public/${
+        image?.originalname.split(".")[0]
+      }${format}`; // Output file path
 
       ffmpeg(inputPath)
         .output(outputPath)
-        .outputOptions([width && `-vf scale=${scale}`])
+        .outputOptions(scale)
         .on("end", async () => {
+          console.log(`Conversion finished: ${outputPath}`);
           try {
-            if (!user?.id) {
-              return res.sendFile(outputPath, (error) => {
-                if (!error) {
-                  clearDirectory(publicPath);
-                }
-              });
-            }
             const uploadImage = await uploadOnCloudinary(outputPath);
+            console.log("Uploaded Image URL:", uploadImage.secure_url);
 
             if (uploadImage) {
               const imgObj = {
@@ -70,20 +56,25 @@ const imageConvert = asycnHandler(async (req, res) => {
               };
 
               imgUrls.push(imgObj);
+
               if (!processedImages.has(imgObj.url)) {
-                await db.query(
-                  "INSERT INTO assets(user_id, images) VALUES($1, $2);",
-                  [user?.id, uploadImage.secure_url]
-                );
-
-                console.log("Image uploaded to DB:", uploadImage.secure_url);
-
+                if (user?.id) {
+                  await db.query(
+                    "INSERT INTO assets(user_id, images) VALUES($1, $2);",
+                    [user?.id, uploadImage.secure_url]
+                  );
+                }
                 processedImages.add(imgObj.url);
                 io.emit("image:converted", { image: imgObj });
               }
             }
+            fs.unlinkSync(inputPath);
             resolve();
           } catch (uploadError) {
+            console.error(
+              "Error uploading to Cloudinary:",
+              uploadError.message
+            );
             reject(uploadError);
           }
         })
@@ -96,8 +87,10 @@ const imageConvert = asycnHandler(async (req, res) => {
   });
 
   await Promise.allSettled(promises);
-  clearDirectory(publicPath);
-  return res.json({
+
+  clearDirectory("public");
+
+  return res.status(200).json({
     success: true,
     images: imgUrls.length,
     message: "Images processed and uploaded successfully.",

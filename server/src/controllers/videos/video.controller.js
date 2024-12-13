@@ -1,15 +1,14 @@
 import { asycnHandler } from "../../utilities/asyncHandler.js";
 import { exec } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "fs";
 import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { io } from "../../../index.js";
-import { clearDirectory } from "../../utilities/clearDirectory.js";
 import { connectDB } from "../../db/index.js";
+import ffmpeg from "fluent-ffmpeg";
 
 const ytUrl = asycnHandler(async (req, res) => {
   const { link } = req.body;
-  console.log(link);
+  console.log("YT URL : " + link);
 
   if (!link) {
     return res
@@ -17,9 +16,7 @@ const ytUrl = asycnHandler(async (req, res) => {
       .json({ success: false, message: "Video URL required." });
   }
 
-  let videoName = "video.mp4";
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const publicPath = path.join(__dirname, "../../../public");
+  let videoName = "public/video.mp4";
 
   exec(`yt-dlp --get-title "${link}"`, (error, title) => {
     if (error) {
@@ -34,42 +31,28 @@ const ytUrl = asycnHandler(async (req, res) => {
       io.emit("ytUrl:url:valid", { title, success: true });
     }
 
-    exec(
-      `yt-dlp -f mp4 -o "${publicPath}/${videoName}" "${link}"`,
-      async (error) => {
-        if (error) {
-          io.emit("ytUrl:videoDownlaod:invalid", {
-            message: "Video download failed.",
-            success: false,
-          });
-          return res
-            .status(500)
-            .json({ success: false, message: "Video download failed." });
-        }
-        io.emit("ytUrl:videoDownlaod:valid", {
-          message: "Video downloaded successfully",
-          success: true,
+    exec(`yt-dlp -f mp4 -o "${videoName}" "${link}"`, async (error) => {
+      if (error) {
+        io.emit("ytUrl:videoDownlaod:invalid", {
+          message: "Video download failed.",
+          success: false,
         });
-        res.sendFile(`${publicPath}/${videoName}`, (error) => {
-          if (error) {
-            io.emit("ytUrl:sendingVideo:invalid", {
-              message: "Failed to send video",
-              success: false,
-            });
-            return res
-              .status(500)
-              .json({ success: false, message: "Failed to send video" });
-          }
-          clearDirectory(publicPath);
-          if (!error) {
-            io.emit("ytUrl:sendingVideo:valid", {
-              message: "Video sent successfully",
-              success: true,
-            });
-          }
-        });
+        return res
+          .status(500)
+          .json({ success: false, message: "Video download failed." });
       }
-    );
+      io.emit("ytUrl:videoDownlaod:valid", {
+        message: "Video downloaded successfully",
+        success: true,
+      });
+
+      const response = await uploadOnCloudinary(videoName);
+      return res.json({
+        message: "video processed successfully",
+        success: true,
+        url: response.secure_url,
+      });
+    });
   });
 });
 
@@ -77,7 +60,6 @@ const videoFormate = asycnHandler(async (req, res) => {
   const user = req?.user;
   const viderFormate = req?.body?.formate || ".mp4";
   const videoFile = req.file;
-  console.log(videoFile);
   if (!videoFile) {
     io.emit("videoFormate:videoFile:invalid", {
       message: "Video File not received by Server . . . !",
@@ -95,11 +77,9 @@ const videoFormate = asycnHandler(async (req, res) => {
     });
   }
 
-  const __dirname = fileURLToPath(import.meta.url);
-  const publicPath = path.join(__dirname, "../../../../public");
-  console.log(publicPath);
   const videoName = `${videoFile.filename.split(".")[0]}${viderFormate}`;
   const output = `./public/${videoName}`;
+  console.log("OutPut : ", output);
 
   exec(
     `ffmpeg -i ${videoFile.path} ${output}`,
@@ -117,73 +97,49 @@ const videoFormate = asycnHandler(async (req, res) => {
           success: true,
         });
         console.log(error);
-        clearDirectory(publicPath);
+
         return res.status(500).json({
           message: "Video format conversion failed",
           success: false,
           error: error.message || stderr,
         });
       } else {
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename="${videoName}"`
-        );
         io.emit("videoFormate:sending:valid", {
           message: "processed video is being sent.",
           success: true,
         });
+        fs.unlinkSync(videoFile.path);
+        const uploadVideo = await uploadOnCloudinary(output);
         if (user?.id) {
-          try {
-            const uploadVideo = await uploadOnCloudinary(output);
-            console.log("Cloudinary URL: ", uploadVideo.secure_url);
+          console.log("Cloudinary URL: ", uploadVideo.secure_url);
 
-            if (uploadVideo?.secure_url || uploadVideo?.url) {
-              const db = await connectDB();
-              const storeVideos = await db.query(
-                `INSERT INTO assets (user_id, videos) VALUES ($1, $2)`,
-                [user?.id, uploadVideo?.secure_url]
-              );
-              console.log("Stored video info: ", storeVideos?.fields);
-              clearDirectory(publicPath);
-              io.emit("videoFormate:done:valid", {
-                message: "Video formate process Done successfully.",
-                success: true,
-              });
-              return res.status(200).json({
-                message: "Video format converted and uploaded successfully.",
-                success: true,
-                url: uploadVideo.secure_url,
-              });
-            }
-          } catch (uploadError) {
-            console.log("Upload Error : ", uploadError);
-            clearDirectory(publicPath);
-            io.emit("videoFormate:sending:invalid", {
-              message: "Video formate failed.",
-              success: false,
+          if (uploadVideo?.secure_url || uploadVideo?.url) {
+            const db = await connectDB();
+            const storeVideos = await db.query(
+              `INSERT INTO assets (user_id, videos) VALUES ($1, $2)`,
+              [user?.id, uploadVideo?.secure_url]
+            );
+            console.log("Stored video info: ", storeVideos?.fields);
+
+            io.emit("videoFormate:done:valid", {
+              message: "Video formate process Done successfully.",
+              success: true,
             });
-            return res.status(500).json({
-              message: "Failed to upload video to Cloudinary",
-              success: false,
-              error: uploadError.message || uploadError,
+            return res.status(200).json({
+              message: "Video format converted and uploaded successfully.",
+              success: true,
+              url: uploadVideo.secure_url,
             });
           }
         } else {
-          return res.sendFile(`${publicPath}/${videoName}`, (error) => {
-            if (error) {
-              console.log("Error sending file: ", error);
-              io.emit("videoFormate:sending:invalid", {
-                message: "Video formate failed.",
-                success: false,
-              });
-            }
-            if (!error) {
-              io.emit("videoFormate:done:valid", {
-                message: "Video formate process Done successfully.",
-                success: true,
-              });
-            }
-            clearDirectory(publicPath);
+          io.emit("videoFormate:sending:valid", {
+            message: "Video formate changed successfully.",
+            success: true,
+          });
+          return res.json({
+            message: "video processed successfully.",
+            success: false,
+            url: uploadVideo?.secure_url,
           });
         }
       }
@@ -194,161 +150,181 @@ const videoFormate = asycnHandler(async (req, res) => {
 const compressVideo = asycnHandler(async (req, res) => {
   try {
     const videoFile = req.file;
+    const size = req.body.size || "1280x?";
+    const fps = req.body.fps || 30;
+    const videoCodec = req.body.videoCodec || "libx264";
+    const format = req.body.format || ".mp4";
 
+    // Validate video file
     if (!videoFile) {
       io.emit("resizeVideo:file:receive:invalid", {
-        message: "video File failed to sent to server",
+        message: "Video file failed to send to the server",
         success: false,
       });
-      return res.json({
-        message: "Video File required.....!",
+      return res.status(400).json({
+        message: "Video file is required!",
         success: false,
       });
     }
-    if (videoFile.path) {
-      console.log(videoFile);
 
-      io.emit("resizeVideo:file:receive:valid", {
-        message: "video File received by server.",
-        success: true,
-      });
-    }
-    const __dirname = fileURLToPath(import.meta.url);
-    const publicPath = path.join(__dirname, "../../../../public");
-    console.log("publicPath : ", publicPath);
+    // Emit valid file event
+    io.emit("resizeVideo:file:receive:valid", {
+      message: "Video file received by server.",
+      success: true,
+    });
+    const outputFile = `./public/compressed-video${format}`;
 
-    const output = `compressed-video.mp4`;
-    console.log("output : ", output);
-    exec(
-      `ffmpeg -i ${videoFile.path} -vcodec libx264 -crf 40 public/${output}`,
-      async (error, stderr, stdout) => {
-        if (stdout) {
-          io.emit("resizeVideo:process:valid", {
-            message: "The video process began.",
-            success: true,
-          });
-        }
-        console.log("STDOUT : ", stdout);
+    ffmpeg(videoFile.path)
+      .size(size)
+      .fps(fps)
+      .videoCodec(videoCodec)
+      .outputOptions("-crf 26")
+      .on("start", () => {
+        io.emit("resizeVideo:process:valid", {
+          message: "The video processing has started.",
+          success: true,
+        });
+      })
+      .on("progress", (load) => {
+        io.emit("resizeVideo:process:percentage", {
+          percentage: load?.percent,
+        });
+      })
+      .on("end", async () => {
+        const response = await uploadOnCloudinary(outputFile);
+        console.log("URL : ", response.secure_url);
 
-        if (error) {
-          console.log(error);
-          io.emit("resizeVideo:process:invalid", {
-            message: "resizing the video process failed . . . . !",
+        io.emit("resizeVideo:done", {
+          message: "Video successfully compressed.",
+          success: true,
+        });
+        // res.sendFile(outputFile, (err) => {
+        //   if (err) {
+        //     io.emit("resizeVideo:sending:invalid", {
+        //       message: "Failed to send the resized video to the client.",
+        //       success: false,
+        //     });
+        //     console.error("Error sending file:", err.message);
+        //   } else {
+        //     io.emit("resizeVideo:sending:valid", {
+        //       message: "Processed video sent successfully.",
+        //       success: true,
+        //     });
+        //   }
+        // });
+        if (!response.secure_url) {
+          io.emit("resizeVideo:sending:invalid", {
+            message: "Failed to send the resized video to the client.",
             success: false,
           });
-          clearDirectory(publicPath);
           return res.json({
-            message: "Video Compressing Process failed......!",
-            error,
+            message: "video resize processed successfully.",
+            success: false,
           });
         } else {
           io.emit("resizeVideo:sending:valid", {
-            message: "Processed video is being sent.",
+            message: "Processed video sent successfully.",
             success: true,
           });
-          res.sendFile(`${publicPath}/${output}`, (error) => {
-            if (error) {
-              io.emit("resizeVideo:sending:invalid", {
-                message: "resized video failed to send to client . . . . !",
-                success: true,
-              });
-              console.log(`Error : `, error);
-            }
-            if (!error) {
-              io.emit("resizeVideo:done", {
-                message: "Processed video sent successfully.",
-                success: true,
-              });
-            }
-            clearDirectory(publicPath);
+          return res.json({
+            message: "video resize processed successfully.",
+            success: true,
+            url: response.secure_url,
           });
         }
-      }
-    );
+      })
+      .on("error", (err) => {
+        io.emit("resizeVideo:process:invalid", {
+          message: "Resizing the video process failed.",
+          success: false,
+        });
+        console.error("Error processing video:", err.message);
+        return res.status(500).json({
+          message: "Video compressing process failed!",
+          success: false,
+          error: err.message,
+        });
+      })
+      .save(outputFile);
   } catch (error) {
-    return res.stauts(400).json({
-      message: "something went wrong.",
+    console.error("Error:", error.message);
+    return res.status(400).json({
+      message: "Something went wrong.",
       success: false,
+      error: error.message,
     });
   }
 });
 
 const audioFromVideo = asycnHandler(async (req, res) => {
-  console.log(req.user);
-
   try {
     const videoFile = req.file;
 
     if (!videoFile) {
       io.emit("audio:videoFile:invalid", {
-        message: "Video file not received by server . . . . . . !",
+        message: "Video file not received by server.",
         success: false,
       });
-      return res.json({
-        message: "Video File required . . . . !",
+      return res.status(400).json({
+        message: "Video file is required.",
         success: false,
       });
     }
-    if (videoFile.path) {
-      io.emit("audio:videoFile:valid", {
-        message: "Video file received by server successfully.=",
-        success: true,
-      });
-    }
 
-    const audioName = `audio${Math.random().toString().slice(2, 11)}.mp3`;
-    const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    const publicPath = path.join(__dirname, "../../../public");
-    const audioPath = path.join(publicPath, audioName);
-    const command = `ffmpeg -i "${videoFile.path}" -q:a 0 "./public/${audioName}"`;
-
-    exec(command, (error, stderr, stdout) => {
-      if (stdout) {
-        io.emit("audio:process:valid", {
-          message: "audio is extracting from video File.",
-          success: true,
-        });
-      }
-      if (error) {
-        io.emit("audio:process:invalid", {
-          message: "Audio from videoFile process is failed.....!",
-          success: false,
-        });
-        console.error("ERROR:", error);
-        clearDirectory(publicPath);
-        return res.json({
-          message: "Audio extraction from video failed.",
-          error,
-          success: false,
-        });
-      }
-      if (!error) {
-        io.emit("audio:sending:valid", {
-          message: "audio file is sending from server to client.",
-          success: true,
-        });
-        res.sendFile(audioPath, (sendError) => {
-          if (sendError) {
-            console.error("Send File Error:", sendError);
-            io.emit("audio:sending:invalid", {
-              message: "audio file failed to transfer file to client",
-              success: false,
-            });
-          }
-          if (!sendError) {
-            io.emit("audio:done", {
-              message: "audio file sent successfully.",
-              success: true,
-            });
-          }
-          clearDirectory(publicPath);
-        });
-      }
+    io.emit("audio:videoFile:valid", {
+      message: "Video file received by server successfully.",
+      success: true,
     });
+    const audioPath = "public/audio.mp3";
+    ffmpeg(videoFile.path)
+      .noVideo()
+      .audioCodec("libmp3lame")
+      .output(audioPath)
+      .on("start", () => {
+        io.emit("audio:process:valid", {
+          message: "Audio extraction process started.",
+          success: true,
+        });
+      })
+      .on("end", async () => {
+        console.log("Audio extraction completed successfully.");
+        fs.unlinkSync(videoFile.path);
+        const response = await uploadOnCloudinary(audioPath);
+        console.log(response);
+        io.emit("audio:done", {
+          message: "Audio extraction completed successfully.",
+          success: true,
+        });
+        return res.json({
+          message: "Audio from video processed successfully.",
+          success: true,
+          url: response.secure_url,
+        });
+      })
+      .on("error", (err) => {
+        fs.unlinkSync(videoFile.path);
+        io.emit("audio:sending:invalid", {
+          message: "Failed to send audio file to client.",
+          success: false,
+        });
+        console.error("Error extracting audio:", err.message);
+        io.emit("audio:process:invalid", {
+          message: "Audio extraction process failed.",
+          success: false,
+        });
+
+        return res.status(500).json({
+          message: "Audio extraction failed.",
+          error: err.message,
+          success: false,
+        });
+      })
+      .run();
   } catch (error) {
-    return res.json({
-      message: "Someting went wrong please try later or with other File.....!",
-      error,
+    console.error("Error:", error.message);
+    return res.status(500).json({
+      message: "Something went wrong.",
+      error: error.message,
       success: false,
     });
   }

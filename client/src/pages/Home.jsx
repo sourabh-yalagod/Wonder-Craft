@@ -28,14 +28,14 @@ const videoFeatures = [
   {
     id: 4,
     title: "Convert Image Format",
-    img: "./images/shinchan.png",
+    img: "./images/0id0xes8.png",
     navigateTo: "/videos/convert-image-formate",
     about: "Convert images between different file formats seamlessly.",
   },
   {
     id: 5,
     title: "Audio from Video",
-    img: "./images/video-transcoding.jpg",
+    img: "./images/zvhbz4gd.png",
     navigateTo: "/videos/audio-from-video",
     about: "Adjust image sizes for various digital and print requirements.",
   },
@@ -82,7 +82,7 @@ const Home = () => {
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
-            className="relative h-[250px] flex items-end transition-all duration-200 rounded-xl overflow-hidden cursor-pointer border border-gray-300 dark:border-gray-700"
+            className="relative group h-[250px] flex items-end transition-all duration-200 rounded-xl overflow-hidden cursor-pointer border border-gray-300 dark:border-gray-700"
             variants={cardVariants}
             initial="hidden"
             animate="visible"
@@ -103,12 +103,12 @@ const Home = () => {
 
             {/* About Text with Slide Animation */}
             <motion.div
-              className="absolute inset-y-0 left-0 z-20 bg-black bg-opacity-70 text-white px-4 py-2 rounded-t-lg"
+              className="absolute inset-y-0 left-0 hidden z-20 group-hover:block bg-opacity-70 text-white px-4 py-2 rounded-t-lg"
               variants={aboutTextVariants}
               initial="hidden"
               whileHover="visible"
             >
-              <p className="text-sm">{feature.about}</p>
+              {feature.about}
             </motion.div>
           </motion.div>
         ))}

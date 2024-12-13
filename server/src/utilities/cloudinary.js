@@ -8,19 +8,20 @@ cloudinary.config({
 });
 
 export const uploadOnCloudinary = async (fileLink) => {
+  console.log("fileLink : ",fileLink);
+  
   try {
     const fileExtension = path.extname(fileLink).replace(".", "");
-    console.log(fileExtension);
-    
+ 
     if (!fileLink) return null;
     const response = await cloudinary.uploader.upload(fileLink, {
       resource_type: "auto",
       format: fileExtension,
     });
-    // fs.unlinkSync(fileLink);
+    fs.unlinkSync(fileLink);
     return response;
   } catch (error) {
-    // fs.unlinkSync(fileLink);
+    fs.unlinkSync(fileLink);
     return error;
   }
 };

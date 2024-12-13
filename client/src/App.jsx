@@ -76,7 +76,7 @@ export default function App() {
           transition={{ type: "spring", stiffness: 200, damping: 10 }}
         />
         <motion.img
-          src="./images/jerry.png"
+          src="./images/0id0xes8.png"
           alt="Image and Video Conversion Graphic"
           className="w-64 h-64 md:w-80 md:h-80 sm:block hidden object-contain rounded-full shadow-xl"
           whileHover={{ rotate: 10, scale: 1.05 }}

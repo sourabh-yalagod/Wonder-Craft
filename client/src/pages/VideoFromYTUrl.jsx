@@ -26,24 +26,14 @@ const VideoFromYTUrl = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axiosInstance.post(
-        `/api/videos/yt-url`,
-        { link: videoUrl },
-        {
-          headers: { "Content-Type": "application/json" },
-          responseType: "blob",
-        }
-      );
-
-      const blob = response.data;
-
-      const link = URL.createObjectURL(blob);
+      const response = await axiosInstance.post(`/api/videos/yt-url`,{ link: videoUrl });
+      console.log("URL : ",response.data);
+      
+      const link = response?.data?.url
       setUrl(link);
-      if (blob.type == "video/mp4") {
+      if(link){
         setProgress(4);
-        console.log("setProgress(4) : ", progress);
       }
-      localStorage.setItem("urls", link);
     } catch (error) {
       console.error(error);
       setErrors("Something went wrong while processing the video.");
