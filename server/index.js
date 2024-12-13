@@ -7,18 +7,18 @@ import cookieParser from "cookie-parser";
 const port = 3000;
 
 const app = express();
+app.use(express.static("public"));
 app.use(cookieParser());
 
 app.use(cors({ origin: process.env.CORS_URL, credentials: true }));
 app.use(express.json());
-app.use(express.static("public"));
 
 const server = http.createServer(app);
 export const io = new Server(server, {
   cors: {
-    credentials:true,
-    origin:process.env.CORS_URL
-  }
+    credentials: true,
+    origin: process.env.CORS_URL,
+  },
 });
 
 io.on("connection", (socket) => {
@@ -30,7 +30,6 @@ io.on("connection", (socket) => {
     console.log("User disconnected");
   });
 });
-
 
 import imageHanlder from "./src/routes/image.router.js";
 import videoHanlder from "./src/routes/video.router.js";
