@@ -24,12 +24,6 @@ export const useSideMenu = () => {
       icon: <Store className="size-5 sm:size-6 md:size-7" />,
     },
     {
-      id: 3,
-      label: "Videos",
-      link: "/videos",
-      icon: <Video className="size-5 sm:size-6 md:size-7" />,
-    },
-    {
       id: 4,
       label: "About",
       link: "/about",

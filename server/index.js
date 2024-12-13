@@ -35,7 +35,6 @@ import imageHanlder from "./src/routes/image.router.js";
 import videoHanlder from "./src/routes/video.router.js";
 import paymentHandlder from "./src/routes/razerPay.router.js";
 import userHandler from "./src/routes/user.router.js";
-import { validateAuth } from "./src/middleweres/auth.js";
 
 app.use("/api/images", imageHanlder);
 app.use("/api/videos", videoHanlder);

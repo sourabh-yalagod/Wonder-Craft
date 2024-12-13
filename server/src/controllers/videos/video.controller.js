@@ -7,6 +7,7 @@ import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
 
 const ytUrl = asycnHandler(async (req, res) => {
+  const user = req.user;
   const { link } = req.body;
   console.log("YT URL : " + link);
 
@@ -47,6 +48,15 @@ const ytUrl = asycnHandler(async (req, res) => {
       });
 
       const response = await uploadOnCloudinary(videoName);
+      if (user?.id) {
+        const db = await connectDB();
+        const assetsDB = await db.query(
+          "INSERT INTO assets(user_id, images) VALUES($1, $2);",
+          [user?.id, response.secure_url]
+        );
+        console.log(assetsDB.rows);
+      }
+      
       return res.json({
         message: "video processed successfully",
         success: true,
