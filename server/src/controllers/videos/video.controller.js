@@ -17,9 +17,9 @@ const ytUrl = asycnHandler(async (req, res) => {
       .json({ success: false, message: "Video URL required." });
   }
 
-  let videoName = "public/video.mp4";
+  const videoName = `./public/video${Math.random().toString().slice(1, 9)}.mp4`;
 
-  exec(`yt-dlp --get-title "${link}"`, (error, title) => {
+  exec(`yt-dlp --get-title "${link}"`, async (error, title) => {
     if (error) {
       io.emit("ytUrl:url:invalid", {
         message: "Invalid YouTube URL",
@@ -31,6 +31,7 @@ const ytUrl = asycnHandler(async (req, res) => {
     if (!error) {
       io.emit("ytUrl:url:valid", { title, success: true });
     }
+    console.log("videoName : ", videoName);
 
     exec(`yt-dlp -f mp4 -o "${videoName}" "${link}"`, async (error) => {
       if (error) {
@@ -48,7 +49,10 @@ const ytUrl = asycnHandler(async (req, res) => {
       });
 
       const response = await uploadOnCloudinary(videoName);
-      if (user?.id) {
+      console.log("URL : ", response?.url);
+      console.log(response);
+
+      if (user?.id && response?.secure_url) {
         const db = await connectDB();
         const assetsDB = await db.query(
           "INSERT INTO assets(user_id, images) VALUES($1, $2);",
@@ -56,7 +60,7 @@ const ytUrl = asycnHandler(async (req, res) => {
         );
         console.log(assetsDB.rows);
       }
-      
+
       return res.json({
         message: "video processed successfully",
         success: true,

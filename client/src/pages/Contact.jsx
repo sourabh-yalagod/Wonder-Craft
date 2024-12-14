@@ -3,14 +3,18 @@ import Input from "../components/Input";
 import { motion } from "framer-motion";
 import { axiosInstance } from "../lib/AxiosInstance";
 import { toast } from "sonner";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const Contact = () => {
+  const [loading, setLoading] = useState(false);
   const { register, handleSubmit } = useForm();
   const onSubmit = async (data) => {
-    console.log(data);
+    setLoading(true);
 
     const response = await axiosInstance.post("/api/users/email", data);
     console.log(response.data);
+    setLoading(false);
 
     if (response.status == 201) {
       toast(
@@ -60,7 +64,7 @@ const Contact = () => {
           type="submit"
           className="w-full text-center bg-blue-500 text-white p-1 hover:bg-blue-600 transition-all hover:scale-[99%] rounded-lg"
         >
-          Submit
+          {loading ? <Loader2 className="animate-spin mx-auto" /> : "Submit"}
         </button>
       </form>
     </motion.div>

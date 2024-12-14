@@ -225,4 +225,37 @@ const emailservice = asycnHandler(async (req, res) => {
   });
 });
 
-export { createUser, signInUser, userAssets, emailservice };
+const subscription = asycnHandler(async (req, res) => {
+  const userId = req?.user?.id;
+  console.log("userId : ", userId);
+
+  if (!userId) {
+    return res.json({
+      message: "userId not Found . . .!",
+      success: false,
+    });
+  }
+  const db = await connectDB();
+  const current = Date.now();
+  const nextMonth = new Date(current).setMonth(
+    new Date(current).getMonth() + 1
+  );
+  const subscription = await db.query(
+    "UPDATE users SET subscription = $2 WHERE _id = $1 RETURNING *",
+    [userId, nextMonth]
+  );
+  if (!subscription.rows[0]) {
+    return res.json({
+      message: "user subscription failed",
+      success: false,
+    });
+  }
+  return res.json({
+    message: "user subscribed successfully.",
+    success: true,
+    description:'',
+    user: subscription.rows[0],
+  });
+});
+
+export { createUser, signInUser, userAssets, emailservice, subscription };

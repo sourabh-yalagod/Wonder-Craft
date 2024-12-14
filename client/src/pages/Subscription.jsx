@@ -1,9 +1,8 @@
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "@/lib/AxiosInstance";
-
-// Account features
+import { toast } from "sonner";
+import { auth } from "../lib/auth.js";
 const freeAccountFeatures = [
   { id: 1, text: "Unlimited Images format conversion" },
   { id: 2, text: "Unlimited Video format conversion" },
@@ -36,6 +35,7 @@ const AccountOptions = ({
   navigateTo,
 }) => {
   const navigate = useNavigate();
+
   return (
     <div className="p-3 rounded-xl flex-1 border-2 w-full h-fit space-y-3 hover:scale-95 transition-all">
       <h1 className="font-semibold text-center text-xl sm:text-2xl">
@@ -64,46 +64,54 @@ const AccountOptions = ({
 };
 
 const Subscription = () => {
-  const [amount, setAmount] = useState(null);
+  const [amount, setAmount] = useState(25);
   const navigate = useNavigate();
+  const [userAuth, setUserAuth] = useState(null);
+  useEffect(() => {
+    setUserAuth(auth());
+  }, [auth]);
   const handlePayment = async () => {
+    if (!userAuth) {
+      toast.warning("athenticated for subscription");
+      navigate("/signin");
+      return;
+    }
     try {
-      const { data: order } = await axiosInstance.post(
-        "/api/payments/orders",
-        { amount }
-      );
-
+      const { data: order } = await axiosInstance.post("/api/payments/orders", {
+        amount,
+      });
       const options = {
         key: "rzp_test_ThTnCMEfPchH4a",
-        amount: order.amount,
+        amount: order.amount || 25,
         currency: "INR",
         name: "Wonder Craft",
-        description: "Test Transaction",
+        description: "Wonder Craft Subscription",
         order_id: order.id,
         handler: async (response) => {
           console.log("Payment response : ", response);
-
-          const result = await axiosInstance.post(
-            "/api/payments/verify",
-            {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }
-          );
+          const result = await axiosInstance.post("/api/payments/verify", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
 
           if (result.data.success) {
-            alert("Payment Successful!");
+            const { data: subscription } = await axiosInstance.post(
+              "/api/users/subscription"
+            );
+            console.log("subscription : ", subscription);
+
+            toast("Payment Successful!");
             navigate(`/home`);
-          } else alert("Payment Failed!");
+          } else toast.warning("Payment Failed!");
         },
         prefill: {
-          name: "John Doe",
-          email: "john.doe@example.com",
-          contact: "9999999999",
+          name: "sourabh yalagod",
+          email: "sourabhofficial99804@gmail.com",
+          contact: "8792537598",
         },
         theme: {
-          color: "#3399cc",
+          color: "#121212",
         },
       };
 
@@ -111,7 +119,7 @@ const Subscription = () => {
       rzp1.open();
     } catch (error) {
       console.error("Payment Error:", error);
-      alert("Failed to initiate payment");
+      toast.warning("Failed to initiate payment");
     }
   };
 

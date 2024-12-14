@@ -1,6 +1,15 @@
 import React from "react";
 import { Image, Video, Music, Combine } from "lucide-react";
 
+const Section = ({ title, description, icon }) => {
+  return (
+    <div className="shadow-md dark:bg-slate-900 bg-slate-400 hover:scale-95 transition-all rounded-lg p-6 flex flex-col items-center text-center hover:bg-slate-500 cursor-pointer">
+      {icon}
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-xs">{description}</p>
+    </div>
+  );
+};
 const About = () => {
   return (
     <section className="py-12 px-4 md:px-8">
@@ -18,51 +27,33 @@ const About = () => {
       {/* Features Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Feature 1: Image Conversion */}
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex flex-col items-center text-center">
-          <Image className="text-blue-500 text-5xl mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Image Conversion
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Easily convert images between formats like JPG, PNG, and WebP while
-            maintaining quality.
-          </p>
-        </div>
-
-        {/* Feature 2: Video Compression */}
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex flex-col items-center text-center">
-          <Combine className="text-green-500 text-5xl mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Video Compression
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Compress videos to reduce file sizes without compromising
-            resolution.
-          </p>
-        </div>
-
-        {/* Feature 3: Video Conversion */}
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex flex-col items-center text-center">
-          <Video className="text-red-500 text-5xl mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Video Conversion
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Convert videos to popular formats like MP4, AVI, MOV, and more for
-            compatibility.
-          </p>
-        </div>
-
-        {/* Feature 4: Audio Extraction */}
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex flex-col items-center text-center">
-          <Music className="text-purple-500 text-5xl mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Audio Extraction
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Extract high-quality audio tracks from your video files in seconds.
-          </p>
-        </div>
+        <Section
+          title="Image Conversion"
+          description="Easily convert images between formats like JPG, PNG, and WebP while
+            maintaining quality."
+          key={1}
+          icon={<Image className="text-blue-500 text-5xl mb-4" />}
+        />
+        <Section
+          title="Video Compression"
+          description="Compress videos to reduce file sizes without compromising
+            resolution."
+          key={2}
+          icon={<Combine className="text-blue-500 text-5xl mb-4" />}
+        />
+        <Section
+          title="Video Conversion"
+          description="Convert videos to popular formats like MP4, AVI, MOV, and more for
+            compatibility."
+          key={3}
+          icon={<Video className="text-blue-500 text-5xl mb-4" />}
+        />
+        <Section
+          title="Audio Extraction"
+          description="Extract high-quality audio tracks from your video files in seconds."
+          key={4}
+          icon={<Music className="text-blue-500 text-5xl mb-4" />}
+        />
       </div>
 
       {/* Video Demo Section */}
@@ -73,7 +64,7 @@ const About = () => {
         <div className="flex justify-center">
           <img
             controls
-            className="rounded-lg shadow-lg w-1/2 max-w-4xl border border-gray-200 dark:border-gray-700"
+            className="rounded-full hover:animate-pulse hover:scale-110 transition-all shadow-lg w-1/2 max-w-4xl border border-gray-200 dark:border-gray-700"
             src="./images/0id0xes8.png"
           />
         </div>

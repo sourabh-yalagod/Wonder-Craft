@@ -3,9 +3,7 @@ import cors from "cors";
 import { Server } from "socket.io";
 import http from "http";
 import cookieParser from "cookie-parser";
-
 const port = 3000;
-
 const app = express();
 app.use(express.static("public"));
 app.use(cookieParser());
