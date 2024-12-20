@@ -4,15 +4,16 @@ import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
 import { motion } from "framer-motion";
 import { axiosInstance } from "@/lib/AxiosInstance";
-
+import { handledownload } from "../lib/HandleDownlaods.js";
+const form = new FormData();
 const AudioFromVideo = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState("");
   const [progress, setProgress] = useState(0);
-  const form = new FormData();
   const socket = useSocket();
+  const [processPercentage, setProcessPercentage] = useState(0);
 
   const handleVideoUrl = async (e) => {
     setUrl("");
@@ -30,15 +31,12 @@ const AudioFromVideo = () => {
       console.log(form);
       setLoading(true);
       setProgress(0);
-
       const response = await axiosInstance.post(
         `/api/videos/audio-from-video`,
         form
       );
-
-      const link = response.data.url;
-      console.log(link);
-      setUrl(link);
+      console.log(response.data.url);
+      setUrl(response?.data?.url);
     } catch (error) {
       console.error(error);
       setErrors("Something went wrong while processing the video.");
@@ -46,6 +44,18 @@ const AudioFromVideo = () => {
       setLoading(false);
     }
   };
+  // const handledownload = async (url) => {
+  //   try {
+  //     const response = await fetch(url);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch the file");
+  //     }
+  //     const audioBlob = await response.blob();
+  //     saveAs(audioBlob, "audio.mp3");
+  //   } catch (error) {
+  //     console.error("Error downloading the file:", error);
+  //   }
+  // };
 
   useEffect(() => {
     socket.on("audio:videoFile:valid", () => setProgress(1));
@@ -64,6 +74,9 @@ const AudioFromVideo = () => {
       setErrors(data.message);
     });
     socket.on("audio:done", () => setProgress(4));
+    socket.on("audio:process:percentage", (data) =>
+      setProcessPercentage(data?.percentage)
+    );
 
     return () => {
       socket.off("audio:videoFile:valid", () => setProgress(1));
@@ -84,7 +97,7 @@ const AudioFromVideo = () => {
       socket.off("audio:done", () => setProgress(4));
     };
   }, [socket]);
-
+  
   return (
     <div className="w-full p-4 sm:py-5">
       <h1 className="text-center font-semibold capitalize text-xl sm:text-2xl md:text-3xl">
@@ -148,6 +161,11 @@ const AudioFromVideo = () => {
           </p>
         )}
       </form>
+      {processPercentage != 0 && (
+        <div className="text-center flex items-center gap-3 font-semibold text-sm p-3">
+          Audio Processing : {processPercentage} %
+        </div>
+      )}
       <div className="py-5 relative flex items-center gap-4 text-xs sm:text-sm md:text-[15px]">
         {url && (
           <div>
@@ -169,13 +187,12 @@ const AudioFromVideo = () => {
           className="w-full grid place-items-center gap-4 sm:grid-cols-2 px-3 sm:py-8 py-12"
         >
           <audio src={url} controls loop />
-          <a
+          <button
             className="bg-blue-500 text-xs px-2 py-1 w-32 sm:text-sm md:text-[15px] text-center rounded-lg"
-            download
-            href={url}
+            onClick={() => handledownload(url, videoFile[0]?.name?.split(".")[0])}
           >
             Download
-          </a>
+          </button>
         </motion.div>
       ) : (
         <Description

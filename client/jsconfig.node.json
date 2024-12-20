@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2020",
+    "baseUrl": ".",
+    "moduleResolution": "Node",
+    "esModuleInterop": true
+  },
+  "include": ["./"],
+  "exclude": ["node_modules"]
+}

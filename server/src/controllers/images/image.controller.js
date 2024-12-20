@@ -3,18 +3,19 @@ import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { io } from "../../../index.js";
 import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
 import fs from "fs";
 import { clearDirectory } from "../../utilities/clearDirectory.js";
 
-ffmpeg.setFfmpegPath(ffmpegStatic);
-
 const imageConvert = asycnHandler(async (req, res) => {
   const user = req.user;
-  const db = await connectDB();
-  const images = req.files; // Multer adds files to req.files
+
+  const images = req.files;
   const { imageFormate, height, width } = req.body;
+  console.log("req.body : ", req.body);
+
   const format = Array.isArray(imageFormate) ? imageFormate[0] : imageFormate;
+  const imageHeight = Array.isArray(height) ? height[0] : height;
+  const imageWidth = Array.isArray(width) ? width[0] : width;
   console.log("format : ", format);
   console.log("imageFormate : ", imageFormate);
 
@@ -25,7 +26,10 @@ const imageConvert = asycnHandler(async (req, res) => {
     });
   }
 
-  const scale = width && height ? `-vf scale=iw*${width / 100}:ih*${height / 100}` : null;
+  const scale =
+    width && height
+      ? `-vf scale=iw*${imageWidth[0] / 100}:ih*${imageHeight[0] / 100}`
+      : null;
   const imgUrls = [];
   const processedImages = new Set();
 
@@ -41,7 +45,7 @@ const imageConvert = asycnHandler(async (req, res) => {
 
       ffmpeg(inputPath)
         .output(outputPath)
-        .outputOptions(scale)
+        .outputOptions([scale])
         .on("end", async () => {
           console.log(`Conversion finished: ${outputPath}`);
           try {
@@ -57,7 +61,8 @@ const imageConvert = asycnHandler(async (req, res) => {
 
               imgUrls.push(imgObj);
 
-              if (!processedImages.has(imgObj.url)) {
+              if (processedImages.has(imgObj.url)) {
+                const db = await connectDB();
                 if (user?.id) {
                   await db.query(
                     "INSERT INTO assets(user_id, images) VALUES($1, $2);",

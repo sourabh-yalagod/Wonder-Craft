@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
 import { axiosInstance } from "@/lib/AxiosInstance";
-
+import { handledownload } from "../lib/HandleDownlaods";
 const VideoFromYTUrl = () => {
   const [videoUrl, setVideoUrl] = useState("");
   const [url, setUrl] = useState("");
@@ -26,12 +26,14 @@ const VideoFromYTUrl = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axiosInstance.post(`/api/videos/yt-url`,{ link: videoUrl });
-      console.log("URL : ",response.data);
-      
-      const link = response?.data?.url
+      const response = await axiosInstance.post(`/api/videos/yt-url`, {
+        link: videoUrl,
+      });
+      console.log("URL : ", response.data);
+
+      const link = response?.data?.url;
       setUrl(link);
-      if(link){
+      if (link) {
         setProgress(4);
       }
     } catch (error) {
@@ -149,18 +151,19 @@ const VideoFromYTUrl = () => {
             controls
             src={url}
           />
-          <a
+          <button
             className="bg-blue-500 text-xs px-2 py-1 w-32 sm:text-sm md:text-[15px] text-center rounded-lg"
-            download
-            href={url}
+            onClick={() => handledownload(url)}
           >
             Download
-          </a>
+          </button>
         </div>
       ) : (
         <Description
           heading={"Input the YouTube Video link"}
-          paragraph={"copy and paste the youtube video link and wait for process."}
+          paragraph={
+            "copy and paste the youtube video link and wait for process."
+          }
         />
       )}
     </div>

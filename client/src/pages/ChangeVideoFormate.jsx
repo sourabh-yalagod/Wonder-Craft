@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
+import { saveAs } from "file-saver";
 
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -16,7 +17,7 @@ const ChangeVideoFormate = () => {
   const [progress, setProgress] = useState(0);
   const form = new FormData();
   const socket = useSocket();
-  const [formate, setFormate] = useState(".mp4");
+  const [formate, setFormate] = useState("mp4");
   console.log(formate);
   
   const handleVideoUrl = async (e) => {
@@ -93,7 +94,9 @@ const ChangeVideoFormate = () => {
       socket.off("videoFormate:done:valid", () => setProgress(4));
     };
   }, [socket]);
-
+  const handleVideoDownload=(url)=>{
+    saveAs(url,'Video')
+  }
   return (
     <div className="w-full p-4 sm:py-5">
       <h1 className="text-center font-semibold capitalize text-xl sm:text-2xl md:text-3xl">
@@ -185,13 +188,12 @@ const ChangeVideoFormate = () => {
             url={url}
             controls
           />
-          <a
+          <button
             className="bg-blue-500 text-xs px-2 py-1 w-32 sm:text-sm md:text-[15px] text-center rounded-lg"
-            download
-            href={url}
+            onClick={()=>handleVideoDownload(url)}
           >
             Download
-          </a>
+          </button>
         </motion.div>
       ) : (
         <Description

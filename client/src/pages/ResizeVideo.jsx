@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useSocket } from "../providers/Socket";
 import Description from "@/components/Description";
@@ -7,6 +6,38 @@ import { motion } from "framer-motion";
 import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
+import SrcollMenu from "../components/ScrollMenu";
+
+const fpsMenu = [
+  { id: 1, value: 24, type: "FPS" },
+  { id: 2, value: 30, type: "FPS" },
+  { id: 3, value: 60, type: "FPS" },
+  { id: 4, value: 120, type: "FPS" },
+  { id: 5, value: 240, type: "FPS" },
+];
+
+const sizeMenu = [
+  { id: 1, value: "426x240", type: "Resolution" },
+  { id: 2, value: "640x360", type: "Resolution" },
+  { id: 3, value: "854x480", type: "Resolution" },
+  { id: 4, value: "1280x720", type: "Resolution" },
+  { id: 5, value: "1920x1080", type: "Resolution" },
+  { id: 6, value: "2560x1440", type: "Resolution" },
+  { id: 7, value: "3840x2160", type: "Resolution" },
+  { id: 8, value: "7680x4320", type: "Resolution" },
+];
+
+const videoCodecMenu = [
+  { id: 1, value: "libx264", type: "Codec" },
+  { id: 2, value: "libx265", type: "Codec" },
+  { id: 3, value: "vp9", type: "Codec" },
+  { id: 4, value: "libvpx", type: "Codec" },
+  { id: 5, value: "mpeg4", type: "Codec" },
+  { id: 6, value: "hevc", type: "Codec" },
+  { id: 7, value: "libaom-av1", type: "Codec" },
+  { id: 8, value: "prores", type: "Codec" },
+  { id: 9, value: "dnxhd", type: "Codec" },
+];
 
 const ResizeVideo = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -16,7 +47,13 @@ const ResizeVideo = () => {
   const [progress, setProgress] = useState(0);
   const form = new FormData();
   const socket = useSocket();
-
+  const [formate, setFormate] = useState("mp4");
+  const [size, setSize] = useState("1280x?");
+  const [videoCodec, setVideoCodec] = useState("libx264");
+  const [fps, setFps] = useState(30);
+  const [processPercentage, setProcessPercentage] = useState(0);
+  console.log("processPercentage : ",processPercentage);
+  
   const handleVideo = async (e) => {
     setUrl("");
     e.preventDefault();
@@ -27,6 +64,10 @@ const ResizeVideo = () => {
       return;
     } else {
       form.append("video", videoFile[0]);
+      form.append("formate", formate);
+      form.append("size", size);
+      form.append("videoCodec", videoCodec);
+      form.append("fps", fps);
     }
 
     try {
@@ -34,21 +75,15 @@ const ResizeVideo = () => {
       setLoading(true);
       setProgress(0);
 
-      const response = await axiosInstance.post(
+      const { data } = await axiosInstance.post(
         `/api/videos/video-compressor`,
-        form,
-        {
-          responseType: "blob",
-        }
+        form
       );
+      console.log("Reponse : ", data);
 
-      const blob = response.data;
-      if (response.data.type == "video/mp4") {
-        const link = URL.createObjectURL(blob);
-        setUrl(link);
-        localStorage.setItem("urls", link);
-      } else {
-        setUrl("");
+      setUrl(data?.url);
+      if(data?.url){
+        setProgress(4)
       }
     } catch (error) {
       console.error(error);
@@ -57,7 +92,6 @@ const ResizeVideo = () => {
       setLoading(false);
     }
   };
-  console.log(progress);
 
   useEffect(() => {
     socket.on("resizeVideo:file:receive:valid", () => setProgress(1));
@@ -77,26 +111,18 @@ const ResizeVideo = () => {
     });
     socket.on("resizeVideo:done", () => setProgress(4));
     socket.on("resizeVideo:process:percentage", (data) =>
-      console.log("resizeVideo:process:percentage : ", data)
+      setProcessPercentage(data?.percentage)
     );
 
     return () => {
-      socket.off("resizeVideo:file:receive:valid", () => setProgress(1));
-      socket.off("resizeVideo:file:receive:invalid", (data) => {
-        setErrors(data.message);
-        setProgress(-1);
-      });
-      socket.off("resizeVideo:process:valid", () => setProgress(2));
-      socket.off("resizeVideo:process:invalid", (data) => {
-        setErrors(data.message);
-        setProgress(-2);
-      });
-      socket.off("resizeVideo:sending:valid", () => setProgress(3));
-      socket.off("resizeVideo:sending:invalid", (data) => {
-        setProgress(-3);
-        setErrors(data.message);
-      });
-      socket.off("resizeVideo:done", () => setProgress(4));
+      socket.off("resizeVideo:file:receive:valid");
+      socket.off("resizeVideo:file:receive:invalid");
+      socket.off("resizeVideo:process:valid");
+      socket.off("resizeVideo:process:invalid");
+      socket.off("resizeVideo:sending:valid");
+      socket.off("resizeVideo:sending:invalid");
+      socket.off("resizeVideo:done");
+      socket.off("resizeVideo:process:percentage");
     };
   }, [socket]);
 
@@ -168,9 +194,20 @@ const ResizeVideo = () => {
           </p>
         )}
       </form>
-      <div className="py-5 relative flex items-center gap-4 text-xs sm:text-sm md:text-[15px]">
+      <div className="py-5 relative space-y-4 gap-4 text-xs sm:text-sm md:text-[15px]">
+        <div className="flex w-full items-center gap-3 flex-wrap">
+          <FormateOptions setFormate={setFormate} isVideoFormate={true} />
+          <SrcollMenu key="fps-menu" data={fpsMenu} setFormat={setFps} />
+          <SrcollMenu key="size-menu" data={sizeMenu} setFormat={setSize} />
+          <SrcollMenu
+            key="codec-menu"
+            data={videoCodecMenu}
+            setFormat={setVideoCodec}
+          />
+          <div>{processPercentage!=0 && <p>Process : {processPercentage}%</p>}</div>
+        </div>
         {url && (
-          <div>
+          <div className="space-y-5">
             <p className="text-green-500">
               Your URL is ready Click on downlaod to get the Video.
             </p>
