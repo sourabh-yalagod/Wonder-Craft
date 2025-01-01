@@ -7,7 +7,6 @@ const port = 3000;
 const app = express();
 app.use(express.static("public"));
 app.use(cookieParser());
-
 app.use(cors({ origin: process.env.CORS_URL, credentials: true }));
 app.use(express.json());
 

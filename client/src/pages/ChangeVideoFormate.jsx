@@ -8,7 +8,7 @@ import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
 import { saveAs } from "file-saver";
-
+import { toast } from "sonner";
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
@@ -19,8 +19,8 @@ const ChangeVideoFormate = () => {
   const socket = useSocket();
   const [formate, setFormate] = useState("mp4");
   console.log(formate);
-  
-  const handleVideoUrl = async (e) => {
+
+  const handleVideo = async (e) => {
     e.preventDefault();
     setErrors("");
 
@@ -40,6 +40,7 @@ const ChangeVideoFormate = () => {
         `/api/videos/video-formate`,
         form
       );
+      console.log(response.data);
 
       const link = response.data.url;
 
@@ -56,6 +57,12 @@ const ChangeVideoFormate = () => {
     }
   };
   console.log(progress);
+
+  useEffect(() => {
+    if (errors) {
+      toast.warning(errors,{duration:5000});
+    }
+  }, [errors, handleVideo]);
 
   useEffect(() => {
     socket.on("videoFormate:videoFile:valid", () => setProgress(1));
@@ -94,9 +101,10 @@ const ChangeVideoFormate = () => {
       socket.off("videoFormate:done:valid", () => setProgress(4));
     };
   }, [socket]);
-  const handleVideoDownload=(url)=>{
-    saveAs(url,'Video')
-  }
+
+  const handleVideoDownload = (url) => {
+    saveAs(url, "Video");
+  };
   return (
     <div className="w-full p-4 sm:py-5">
       <h1 className="text-center font-semibold capitalize text-xl sm:text-2xl md:text-3xl">
@@ -137,7 +145,7 @@ const ChangeVideoFormate = () => {
         </div>
       </div>
 
-      <form onSubmit={handleVideoUrl} className="relative w-full">
+      <form onSubmit={handleVideo} className="relative w-full">
         <input
           placeholder="YouTube URL"
           className="bg-transparent border p-2 rounded-lg w-full outline-none"
@@ -190,7 +198,7 @@ const ChangeVideoFormate = () => {
           />
           <button
             className="bg-blue-500 text-xs px-2 py-1 w-32 sm:text-sm md:text-[15px] text-center rounded-lg"
-            onClick={()=>handleVideoDownload(url)}
+            onClick={() => handleVideoDownload(url)}
           >
             Download
           </button>

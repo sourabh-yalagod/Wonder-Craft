@@ -7,6 +7,7 @@ import FormateOptions from "@/components/FormateOptions";
 import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
 import SrcollMenu from "../components/ScrollMenu";
+import { toast } from "sonner";
 
 const fpsMenu = [
   { id: 1, value: 24, type: "FPS" },
@@ -52,8 +53,8 @@ const ResizeVideo = () => {
   const [videoCodec, setVideoCodec] = useState("libx264");
   const [fps, setFps] = useState(30);
   const [processPercentage, setProcessPercentage] = useState(0);
-  console.log("processPercentage : ",processPercentage);
-  
+  console.log("processPercentage : ", processPercentage);
+
   const handleVideo = async (e) => {
     setUrl("");
     e.preventDefault();
@@ -69,7 +70,8 @@ const ResizeVideo = () => {
       form.append("videoCodec", videoCodec);
       form.append("fps", fps);
     }
-
+    console.log(form);
+    
     try {
       console.log(form);
       setLoading(true);
@@ -80,19 +82,23 @@ const ResizeVideo = () => {
         form
       );
       console.log("Reponse : ", data);
-
       setUrl(data?.url);
-      if(data?.url){
-        setProgress(4)
+      if (data?.url) {
+        setProgress(4);
       }
     } catch (error) {
-      console.error(error);
+      console.log(error);
       setErrors("Something went wrong while processing the video.");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if(errors){
+      toast("errors");
+    }
+  }, [errors,setErrors]);
   useEffect(() => {
     socket.on("resizeVideo:file:receive:valid", () => setProgress(1));
     socket.on("resizeVideo:file:receive:invalid", (data) => {
@@ -173,7 +179,6 @@ const ResizeVideo = () => {
 
       <form onSubmit={handleVideo} className="relative w-full">
         <input
-          placeholder="YouTube URL"
           className="bg-transparent border p-2 rounded-lg w-full outline-none"
           type="file"
           onChange={(e) => {
@@ -204,7 +209,9 @@ const ResizeVideo = () => {
             data={videoCodecMenu}
             setFormat={setVideoCodec}
           />
-          <div>{processPercentage!=0 && <p>Process : {processPercentage}%</p>}</div>
+          <div>
+            {processPercentage != 0 && <p>Process : {processPercentage}%</p>}
+          </div>
         </div>
         {url && (
           <div className="space-y-5">

@@ -1,18 +1,19 @@
+import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
 
-import App from "./App";
-import Home from "./pages/Home";
-import Subscription from "./pages/Subscription";
-import VideoFromYTUrl from "./pages/VideoFromYTUrl";
-import ResizeVideo from "./pages/ResizeVideo";
-import ChangeVideoFormate from "./pages/ChangeVideoFormate";
-import ConvertImageFormates from "./pages/ConvertImageFormates";
-import AudioFromVideo from "./pages/AudioFromVIdeo";
-import SignIn from "./pages/auth/SignIn";
-import SignUp from "./pages/auth/SignUp";
-import Store from "./pages/Store";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
+const App = lazy(() => import("./App"));
+const Home = lazy(() => import("./pages/Home"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const VideoFromYTUrl = lazy(() => import("./pages/VideoFromYTUrl"));
+const ResizeVideo = lazy(() => import("./pages/ResizeVideo"));
+const ChangeVideoFormate = lazy(() => import("./pages/ChangeVideoFormate"));
+const ConvertImageFormates = lazy(() => import("./pages/ConvertImageFormates"));
+const AudioFromVideo = lazy(() => import("./pages/AudioFromVideo"));
+const SignIn = lazy(() => import("./pages/auth/SignIn"));
+const SignUp = lazy(() => import("./pages/auth/SignUp"));
+const Store = lazy(() => import("./pages/Store"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 function Layout() {
   return (

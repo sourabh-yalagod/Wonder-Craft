@@ -19,17 +19,17 @@ const ytUrl = asycnHandler(async (req, res) => {
 
   const videoName = `./public/video${Math.random().toString().slice(1, 9)}.mp4`;
 
-  exec(`yt-dlp --get-title "${link}"`, async (error, title) => {
+  exec(`yt-dlp -j "${link}"`, async (error, info) => {
     if (error) {
       io.emit("ytUrl:url:invalid", {
         message: "Invalid YouTube URL",
         success: false,
       });
-
       return res.json({ success: false, message: "Invalid YouTube URL" });
     }
     if (!error) {
-      io.emit("ytUrl:url:valid", { title, success: true });
+      console.log(info);
+      io.emit("ytUrl:url:valid", { info, success: true });
     }
     console.log("videoName : ", videoName);
 
@@ -167,8 +167,10 @@ const videoFormate = asycnHandler(async (req, res) => {
 });
 
 const compressVideo = asycnHandler(async (req, res) => {
+  const videoFile = req.file;
+  console.log(fs.existsSync(videoFile.path));
+  
   try {
-    const videoFile = req.file;
     const size = req.body.size || "1280x?";
     const fps = req.body.fps || 30;
     const videoCodec = req.body.videoCodec || "libx264";
@@ -185,8 +187,6 @@ const compressVideo = asycnHandler(async (req, res) => {
         success: false,
       });
     }
-
-    // Emit valid file event
     io.emit("resizeVideo:file:receive:valid", {
       message: "Video file received by server.",
       success: true,
@@ -211,26 +211,12 @@ const compressVideo = asycnHandler(async (req, res) => {
       })
       .on("end", async () => {
         const response = await uploadOnCloudinary(outputFile);
-        console.log("URL : ", response.secure_url);
-
+        console.log("URL : ", response?.secure_url);
+        fs.existsSync(videoFile.path); fs.unlinkSync(videoFile.path);
         io.emit("resizeVideo:done", {
           message: "Video successfully compressed.",
           success: true,
         });
-        // res.sendFile(outputFile, (err) => {
-        //   if (err) {
-        //     io.emit("resizeVideo:sending:invalid", {
-        //       message: "Failed to send the resized video to the client.",
-        //       success: false,
-        //     });
-        //     console.error("Error sending file:", err.message);
-        //   } else {
-        //     io.emit("resizeVideo:sending:valid", {
-        //       message: "Processed video sent successfully.",
-        //       success: true,
-        //     });
-        //   }
-        // });
         if (!response.secure_url) {
           io.emit("resizeVideo:sending:invalid", {
             message: "Failed to send the resized video to the client.",
@@ -257,7 +243,7 @@ const compressVideo = asycnHandler(async (req, res) => {
           message: "Resizing the video process failed.",
           success: false,
         });
-        console.error("Error processing video:", err.message);
+        console.error("Error : ", err);
         return res.status(500).json({
           message: "Video compressing process failed!",
           success: false,
@@ -267,12 +253,16 @@ const compressVideo = asycnHandler(async (req, res) => {
       .save(outputFile);
   } catch (error) {
     console.error("Error:", error.message);
+    fs.existsSync(videoFile.path); fs.unlinkSync(videoFile.path);
     return res.status(400).json({
       message: "Something went wrong.",
       success: false,
       error: error.message,
     });
-  }
+  } 
+  // finally {
+  //   fs.unlinkSync(videoFile.path);
+  // }
 });
 
 const audioFromVideo = asycnHandler(async (req, res) => {
