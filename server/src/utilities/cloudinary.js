@@ -8,11 +8,10 @@ cloudinary.config({
 });
 
 export const uploadOnCloudinary = async (fileLink) => {
-  console.log("fileLink : ",fileLink);
-  
   try {
     const fileExtension = path.extname(fileLink).replace(".", "");
- 
+    console.log("fileExtension : ",fileExtension);
+    
     if (!fileLink) return null;
     const response = await cloudinary.uploader.upload(fileLink, {
       resource_type: "auto",

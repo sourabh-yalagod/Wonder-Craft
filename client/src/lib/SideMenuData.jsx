@@ -3,6 +3,7 @@ import {
   ImageDown,
   Notebook,
   PhoneCall,
+  ServerIcon,
   Store,
   Subscript,
   User2Icon,
@@ -12,10 +13,16 @@ import {
 export const useSideMenu = () => {
   const sideMenuData = [
     {
-      id: 1,
+      id: 0,
       label: "Home",
-      link: "/home",
+      link: "/",
       icon: <Home className="size-5 sm:size-6 md:size-7" />,
+    },
+    {
+      id: 1,
+      label: "Services",
+      link: "/services",
+      icon: <ServerIcon className="size-5 sm:size-6 md:size-7" />,
     },
     {
       id: 2,
@@ -35,7 +42,7 @@ export const useSideMenu = () => {
       link: "/contact",
       icon: <PhoneCall className="size-5 sm:size-6 md:size-7" />,
     },
-    { id: 6, label: "Create Account", link: "/", icon: <User2Icon /> },
+    { id: 6, label: "Create Account", link: "/create-account", icon: <User2Icon /> },
     {
       id: 7,
       label: "Subsription",

@@ -41,7 +41,7 @@ const videoFeatures = [
   },
 ];
 
-const Home = () => {
+const Services = () => {
   const navigate = useNavigate();
 
   const cardVariants = {
@@ -100,8 +100,6 @@ const Home = () => {
             >
               {feature.title}
             </motion.p>
-
-            {/* About Text with Slide Animation */}
             <motion.div
               className="absolute inset-y-0 left-0 hidden z-20 group-hover:block bg-opacity-70 text-white px-4 py-2 rounded-t-lg"
               variants={aboutTextVariants}
@@ -117,4 +115,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Services;

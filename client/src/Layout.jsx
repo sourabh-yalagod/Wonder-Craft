@@ -1,8 +1,10 @@
 import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
+import SecureRouters from "./lib/SecureRouters";
+import Services from "./pages/Services";
 
 const App = lazy(() => import("./App"));
-const Home = lazy(() => import("./pages/Home"));
+const Home = lazy(() => import("./pages/Services"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const VideoFromYTUrl = lazy(() => import("./pages/VideoFromYTUrl"));
 const ResizeVideo = lazy(() => import("./pages/ResizeVideo"));
@@ -19,10 +21,14 @@ function Layout() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/services" element={<Services />} />
       <Route path="/create-account" element={<SignUp />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/home" element={<Home />} />
-      <Route path="/store" element={<Store />} />
+
+      <Route element={<SecureRouters />}>
+        <Route path="/store" element={<Store />} />
+      </Route>
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
       <Route path="/videos/ytURL-to-video" element={<VideoFromYTUrl />} />

@@ -96,7 +96,6 @@ const videoFormate = asycnHandler(async (req, res) => {
   console.log("Output Path: ", outputPath);
 
   ffmpeg(videoFile.path)
-    .outputFormat(videoFormat)
     .output(outputPath)
     .on("end", async () => {
       try {
@@ -105,15 +104,16 @@ const videoFormate = asycnHandler(async (req, res) => {
           message: "Processed video is being sent.",
           success: true,
         });
-
+        console.log("outputPath : ",outputPath);
+        
         const uploadVideo = await uploadOnCloudinary(outputPath);
-        console.log("Cloudinary URL: ", uploadVideo?.secure_url);
+        console.log("Cloudinary URL: ", uploadVideo);
 
         if (userId) {
           const db = await connectDB();
           await db.query(
             `INSERT INTO assets (user_id, videos) VALUES ($1, $2)`,
-            [userId, uploadVideo.secure_url]
+            [userId, uploadVideo?.secure_url]
           );
         }
         io.emit("videoFormate:done:valid", {

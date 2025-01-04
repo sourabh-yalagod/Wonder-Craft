@@ -28,9 +28,6 @@ const Store = () => {
     const allVideos = response?.assets?.filter((asset) => {
       return asset.videos !== null || "";
     });
-    console.log("allVideos : ", allVideos);
-    console.log("allImages : ", allImages);
-
     setImages(allImages);
     setVideos(allVideos);
   }, [response]);
