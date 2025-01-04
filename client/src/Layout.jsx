@@ -10,7 +10,7 @@ const VideoFromYTUrl = lazy(() => import("./pages/VideoFromYTUrl"));
 const ResizeVideo = lazy(() => import("./pages/ResizeVideo"));
 const ChangeVideoFormate = lazy(() => import("./pages/ChangeVideoFormate"));
 const ConvertImageFormates = lazy(() => import("./pages/ConvertImageFormates"));
-const AudioFromVideo = lazy(() => import("./pages/AudioFromVideo"));
+const AudioFromVideo = lazy(() => import("./pages/AudioFromVIdeo"));
 const SignIn = lazy(() => import("./pages/auth/SignIn"));
 const SignUp = lazy(() => import("./pages/auth/SignUp"));
 const Store = lazy(() => import("./pages/Store"));
