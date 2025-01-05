@@ -1,7 +1,10 @@
 import { Router } from "express";
 import {
   audioFromVideo,
+  compress,
   compressVideo,
+  convertVideo,
+  fetchaudio,
   videoFormate,
   ytUrl,
 } from "../controllers/videos/video.controller.js";
@@ -21,4 +24,12 @@ router
   .route("/audio-from-video")
   .post(upload.single("video"), validateAuth, audioFromVideo);
 
+router
+  .route("/audio-test")
+  .post(upload.single("video"), validateAuth, fetchaudio);
+
+router.route("/compress").post(upload.single("video"), validateAuth, compress);
+router
+  .route("/convertVideo")
+  .post(upload.single("video"), validateAuth, convertVideo);
 export default router;

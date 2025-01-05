@@ -5,6 +5,7 @@ import { uploadOnCloudinary } from "../../utilities/cloudinary.js";
 import { io } from "../../../index.js";
 import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
+import path from "path";
 
 const ytUrl = asycnHandler(async (req, res) => {
   const user = req.user;
@@ -104,8 +105,8 @@ const videoFormate = asycnHandler(async (req, res) => {
           message: "Processed video is being sent.",
           success: true,
         });
-        console.log("outputPath : ",outputPath);
-        
+        console.log("outputPath : ", outputPath);
+
         const uploadVideo = await uploadOnCloudinary(outputPath);
         console.log("Cloudinary URL: ", uploadVideo);
 
@@ -169,7 +170,7 @@ const videoFormate = asycnHandler(async (req, res) => {
 const compressVideo = asycnHandler(async (req, res) => {
   const videoFile = req.file;
   console.log(fs.existsSync(videoFile.path));
-  
+
   try {
     const size = req.body.size || "1280x?";
     const fps = req.body.fps || 30;
@@ -212,7 +213,8 @@ const compressVideo = asycnHandler(async (req, res) => {
       .on("end", async () => {
         const response = await uploadOnCloudinary(outputFile);
         console.log("URL : ", response?.secure_url);
-        fs.existsSync(videoFile.path); fs.unlinkSync(videoFile.path);
+        fs.existsSync(videoFile.path);
+        fs.unlinkSync(videoFile.path);
         io.emit("resizeVideo:done", {
           message: "Video successfully compressed.",
           success: true,
@@ -253,13 +255,14 @@ const compressVideo = asycnHandler(async (req, res) => {
       .save(outputFile);
   } catch (error) {
     console.error("Error:", error.message);
-    fs.existsSync(videoFile.path); fs.unlinkSync(videoFile.path);
+    fs.existsSync(videoFile.path);
+    fs.unlinkSync(videoFile.path);
     return res.status(400).json({
       message: "Something went wrong.",
       success: false,
       error: error.message,
     });
-  } 
+  }
   // finally {
   //   fs.unlinkSync(videoFile.path);
   // }
@@ -337,4 +340,124 @@ const audioFromVideo = asycnHandler(async (req, res) => {
     .run();
 });
 
-export { videoFormate, ytUrl, compressVideo, audioFromVideo };
+const dirname = path.join(import.meta.dirname, "../../../public");
+
+const fetchaudio = asycnHandler(async (req, res) => {
+  const user = req.user;
+  const videoFile = req.file;
+  const audioFormate = req.body.audioFormate || ".mp3";
+  const outputFileName = `${videoFile?.originalname
+    .split(".")[0]
+    .concat(audioFormate)}`;
+  const outputFile = `public/${outputFileName}`;
+  ffmpeg(videoFile.path)
+    .noVideo()
+    .output(outputFile)
+    .on("progress", (e) => {
+      console.log(e.percent);
+    })
+    .on("end", async () => {
+      return res.sendFile(`${dirname}/${outputFileName}`, async () => {
+        if (user) {
+          const response = await uploadOnCloudinary(outputFile);
+          console.log(response?.url);
+        }
+        if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
+        if (fs.existsSync(`${dirname}/${outputFileName}`))
+          fs.unlinkSync(`${dirname}/${outputFileName}`);
+      });
+    })
+    .on("error", (err) => {
+      console.error("FFmpeg Error:", err.message);
+      // reject(err);
+    })
+    .run();
+});
+
+const compress = asycnHandler(async (req, res) => {
+  const user = req.user;
+  const videoFile = req.file;
+  const size = req.body.size || "1280x?";
+  const fps = req.body.fps || 30;
+  const videoCodec = req.body.videoCodec || "libx264";
+  const formate = req.body.formate || ".mp3";
+
+  // Validate video file
+  if (!videoFile) {
+    io.emit("resizeVideo:file:receive:invalid", {
+      message: "Video file failed to send to the server",
+      success: false,
+    });
+    return res.status(400).json({
+      message: "Video file is required!",
+      success: false,
+    });
+  }
+  io.emit("resizeVideo:file:receive:valid", {
+    message: "Video file received by server.",
+    success: true,
+  });
+  const outputFileName = `${videoFile.originalname
+    .split(".")[0]
+    .concat(formate)}`;
+  const localFile = `public/${outputFileName}`;
+  const outputFile = `${dirname}/${outputFileName}`;
+  ffmpeg(videoFile.path)
+    .size(size)
+    .fps(fps)
+    .videoCodec(videoCodec)
+    .outputOptions("-crf 26")
+    .output(outputFile)
+    .on("end", async () => {
+      res.sendFile(outputFile, async () => {
+        if (user) {
+          const response = await uploadOnCloudinary(localFile);
+          console.log(response.url);
+        }
+        if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
+        if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
+      });
+    })
+    .run();
+});
+
+const convertVideo = asycnHandler(async (req, res) => {
+  const user = req.user;
+  const videoFile = req.file;
+  const formate = req.body.formate || ".mp4";
+
+  if (!videoFile) {
+    return res.status(400).json({
+      message: "Video file is required!",
+      success: false,
+    });
+  }
+  const outputFileName = `${videoFile.originalname
+    .split(".")[0]
+    .concat(formate)}`;
+  const localFile = `public/${outputFileName}`;
+  const outputFile = `${dirname}/${outputFileName}`;
+  ffmpeg(videoFile.path)
+    .output(outputFile)
+    .on("end", async () => {
+      res.sendFile(outputFile, async () => {
+        if (user) {
+          const response = await uploadOnCloudinary(localFile);
+          console.log(response.url);
+        }
+        if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
+        if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
+      });
+    })
+    .run();
+});
+
+export {
+  videoFormate,
+  ytUrl,
+  compressVideo,
+  audioFromVideo,
+  fetchaudio,
+  compress,
+  convertVideo
+};
