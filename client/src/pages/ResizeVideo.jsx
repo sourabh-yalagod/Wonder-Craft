@@ -8,6 +8,8 @@ import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
 import SrcollMenu from "../components/ScrollMenu";
 import { toast } from "sonner";
+import Progress from "../components/Progress";
+import { handledownload } from "../lib/HandleDownlaods";
 
 const fpsMenu = [
   { id: 1, value: 24, type: "FPS" },
@@ -45,93 +47,37 @@ const ResizeVideo = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState("");
-  const [progress, setProgress] = useState(0);
-  const form = new FormData();
-  const socket = useSocket();
-  const [formate, setFormate] = useState("mp4");
+  const [formate, setFormate] = useState(".mp4");
   const [size, setSize] = useState("1280x?");
   const [videoCodec, setVideoCodec] = useState("libx264");
   const [fps, setFps] = useState(30);
-  const [processPercentage, setProcessPercentage] = useState(0);
-  console.log("processPercentage : ", processPercentage);
 
-  const handleVideo = async (e) => {
-    setUrl("");
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors("");
-
     if (!videoFile) {
-      setErrors("Video File required!");
+      toast.error("Video File required . . . . !");
       return;
-    } else {
-      form.append("video", videoFile[0]);
-      form.append("formate", formate);
-      form.append("size", size);
-      form.append("videoCodec", videoCodec);
-      form.append("fps", fps);
     }
-    console.log(form);
-    
-    try {
-      console.log(form);
-      setLoading(true);
-      setProgress(0);
-
-      const { data } = await axiosInstance.post(
-        `/api/videos/video-compressor`,
-        form
-      );
-      console.log("Reponse : ", data);
-      setUrl(data?.url);
-      if (data?.url) {
-        setProgress(4);
-      }
-    } catch (error) {
-      console.log(error);
-      setErrors("Something went wrong while processing the video.");
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    const form = new FormData();
+    form.append("video", videoFile[0]);
+    form.append("formate", formate);
+    form.append("videoCodec", videoCodec);
+    form.append("fps", fps);
+    form.append("size", size);
+    const { data } = await axiosInstance.post("/api/videos/compress", form, {
+      responseType: "blob",
+    });
+    const link = URL.createObjectURL(data);
+    console.log("Link : ", link);
+    setLoading(false);
+    setUrl(link);
+    if (link) {
+      toast("Process successfull enjoy.");
+    } else {
+      toast.warning("Process failed");
     }
   };
-
-  useEffect(() => {
-    if(errors){
-      toast("errors");
-    }
-  }, [errors,setErrors]);
-  useEffect(() => {
-    socket.on("resizeVideo:file:receive:valid", () => setProgress(1));
-    socket.on("resizeVideo:file:receive:invalid", (data) => {
-      setErrors(data.message);
-      setProgress(-1);
-    });
-    socket.on("resizeVideo:process:valid", () => setProgress(2));
-    socket.on("resizeVideo:process:invalid", (data) => {
-      setErrors(data.message);
-      setProgress(-2);
-    });
-    socket.on("resizeVideo:sending:valid", () => setProgress(3));
-    socket.on("resizeVideo:sending:invalid", (data) => {
-      setProgress(-3);
-      setErrors(data.message);
-    });
-    socket.on("resizeVideo:done", () => setProgress(4));
-    socket.on("resizeVideo:process:percentage", (data) =>
-      setProcessPercentage(data?.percentage)
-    );
-
-    return () => {
-      socket.off("resizeVideo:file:receive:valid");
-      socket.off("resizeVideo:file:receive:invalid");
-      socket.off("resizeVideo:process:valid");
-      socket.off("resizeVideo:process:invalid");
-      socket.off("resizeVideo:sending:valid");
-      socket.off("resizeVideo:sending:invalid");
-      socket.off("resizeVideo:done");
-      socket.off("resizeVideo:process:percentage");
-    };
-  }, [socket]);
-
   return (
     <div className="w-full p-4 sm:py-5">
       <motion.h1
@@ -142,42 +88,8 @@ const ResizeVideo = () => {
       >
         Upload and Video File
       </motion.h1>
-
-      <div className="flex justify-between text-[9px] text-center py-5">
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -1 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Video Received
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -2 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Checking
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -3 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Processing
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center  ${
-            progress == 4 && "bg-green-600 transition-all duration-700"
-          }`}
-        >
-          Done
-        </div>
-      </div>
-
-      <form onSubmit={handleVideo} className="relative w-full">
+      <Progress />
+      <form onSubmit={handleSubmit} className="relative w-full">
         <input
           className="bg-transparent border p-2 rounded-lg w-full outline-none"
           type="file"
@@ -209,9 +121,6 @@ const ResizeVideo = () => {
             data={videoCodecMenu}
             setFormat={setVideoCodec}
           />
-          <div>
-            {processPercentage != 0 && <p>Process : {processPercentage}%</p>}
-          </div>
         </div>
         {url && (
           <div className="space-y-5">
@@ -239,13 +148,24 @@ const ResizeVideo = () => {
             url={url}
             controls
           />
-          <a
+          <button
+          className="bg-blue-600 p-1 rounded-xl px-2 hover:bg-blue-800 hover:scale-105 transition-all"
+            onClick={() =>
+              handledownload(
+                url,
+                videoFile[0]?.name?.split(".")[0]?.concat(formate)
+              )
+            }
+          >
+            Download
+          </button>
+          {/* <a
             className="bg-blue-500 text-xs px-2 py-1 w-32 sm:text-sm md:text-[15px] text-center rounded-lg"
             download
             href={url}
           >
             Download
-          </a>
+          </a> */}
         </motion.div>
       ) : (
         <Description

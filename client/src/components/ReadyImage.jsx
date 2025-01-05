@@ -3,7 +3,8 @@ import { saveAs } from "file-saver";
 import { Edit } from "lucide-react";
 
 const ReadyImage = ({ imagename = "image-1", link }) => {
-    
+  console.log("imagename : ",imagename);
+  
   const handleDownload = () => {
     saveAs(link, rename ? rename : imagename);
     setInputBox(false);

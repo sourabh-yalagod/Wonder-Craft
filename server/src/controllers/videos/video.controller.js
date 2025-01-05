@@ -345,6 +345,17 @@ const dirname = path.join(import.meta.dirname, "../../../public");
 const fetchaudio = asycnHandler(async (req, res) => {
   const user = req.user;
   const videoFile = req.file;
+  if (videoFile) {
+    io.emit("file:reached:valid", {
+      message: "File uploaded successfully.",
+      success: true,
+    });
+  } else {
+    io.emit("file:reached:invalid", {
+      message: "File upload failed.",
+      success: false,
+    });
+  }
   const audioFormate = req.body.audioFormate || ".mp3";
   const outputFileName = `${videoFile?.originalname
     .split(".")[0]
@@ -353,14 +364,32 @@ const fetchaudio = asycnHandler(async (req, res) => {
   ffmpeg(videoFile.path)
     .noVideo()
     .output(outputFile)
+    .on("start", () => {
+      io.emit("process:began", {
+        message: "Process Began with uplaoded resporces please wait......!",
+        success: true,
+      });
+    })
     .on("progress", (e) => {
+      io.emit("process:progress", { success: true, percentage: e.percent });
       console.log(e.percent);
     })
     .on("end", async () => {
+      io.emit("process:complete", {
+        success: true,
+        message: "File converted.",
+      });
       return res.sendFile(`${dirname}/${outputFileName}`, async () => {
+        io.emit("done", { success: true, message: "File Sent Successfully." });
         if (user) {
           const response = await uploadOnCloudinary(outputFile);
-          console.log(response?.url);
+          if (response?.url) {
+            io.emit("upload:on:cloud", {
+              success: true,
+              message: "File Uploaded on Cloud",
+              url: response?.secure_url,
+            });
+          }
         }
         if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
         if (fs.existsSync(`${dirname}/${outputFileName}`))
@@ -368,8 +397,8 @@ const fetchaudio = asycnHandler(async (req, res) => {
       });
     })
     .on("error", (err) => {
+      io.emit("failed", { success: false, message: "Process failed" });
       console.error("FFmpeg Error:", err.message);
-      // reject(err);
     })
     .run();
 });
@@ -383,9 +412,14 @@ const compress = asycnHandler(async (req, res) => {
   const formate = req.body.formate || ".mp3";
 
   // Validate video file
-  if (!videoFile) {
-    io.emit("resizeVideo:file:receive:invalid", {
-      message: "Video file failed to send to the server",
+  if (videoFile) {
+    io.emit("file:reached:valid", {
+      message: "File uploaded successfully.",
+      success: true,
+    });
+  } else {
+    io.emit("file:reached:invalid", {
+      message: "File upload failed.",
       success: false,
     });
     return res.status(400).json({
@@ -393,10 +427,6 @@ const compress = asycnHandler(async (req, res) => {
       success: false,
     });
   }
-  io.emit("resizeVideo:file:receive:valid", {
-    message: "Video file received by server.",
-    success: true,
-  });
   const outputFileName = `${videoFile.originalname
     .split(".")[0]
     .concat(formate)}`;
@@ -408,15 +438,40 @@ const compress = asycnHandler(async (req, res) => {
     .videoCodec(videoCodec)
     .outputOptions("-crf 26")
     .output(outputFile)
+    .on("start", () => {
+      io.emit("process:began", {
+        message: "Process Began with uplaoded resporces please wait......!",
+        success: true,
+      });
+    })
+    .on("progress", (e) => {
+      io.emit("process:progress", { success: true, percentage: e.percent });
+      console.log(e.percent);
+    })
     .on("end", async () => {
+      io.emit("process:complete", {
+        success: true,
+        message: "File converted.",
+      });
       res.sendFile(outputFile, async () => {
+        io.emit("done", { success: true, message: "File Sent Successfully." });
         if (user) {
           const response = await uploadOnCloudinary(localFile);
-          console.log(response.url);
+          if (response.url) {
+            io.emit("upload:on:cloud", {
+              success: true,
+              message: "File Uploaded on Cloud",
+              url: response?.secure_url,
+            });
+          }
         }
         if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
         if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
       });
+    })
+    .on("error", (error) => {
+      io.emit("failed", { success: false, message: "Process failed" });
+      console.log(error);
     })
     .run();
 });
@@ -426,7 +481,16 @@ const convertVideo = asycnHandler(async (req, res) => {
   const videoFile = req.file;
   const formate = req.body.formate || ".mp4";
 
-  if (!videoFile) {
+  if (videoFile) {
+    io.emit("file:reached:valid", {
+      message: "File uploaded successfully.",
+      success: true,
+    });
+  } else {
+    io.emit("file:reached:invalid", {
+      message: "File upload failed.",
+      success: false,
+    });
     return res.status(400).json({
       message: "Video file is required!",
       success: false,
@@ -439,15 +503,37 @@ const convertVideo = asycnHandler(async (req, res) => {
   const outputFile = `${dirname}/${outputFileName}`;
   ffmpeg(videoFile.path)
     .output(outputFile)
+    .on("start", () => {
+      io.emit("process:began", {
+        message: "Process Began with uplaoded resporces please wait......!",
+        success: true,
+      });
+    })
+    .on("progress", (e) => {
+      io.emit("process:progress", { success: true, percentage: e.percent });
+      console.log(e.percent);
+    })
     .on("end", async () => {
-      res.sendFile(outputFile, async () => {
+      return res.sendFile(outputFile, async () => {
+        io.emit("done", { success: true, message: "File Sent Successfully." });
         if (user) {
           const response = await uploadOnCloudinary(localFile);
+          if (response?.url) {
+            io.emit("upload:on:cloud", {
+              success: true,
+              message: "File Uploaded on Cloud",
+              url: response?.secure_url,
+            });
+          }
           console.log(response.url);
         }
         if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
         if (fs.existsSync(videoFile.path)) fs.unlinkSync(videoFile.path);
       });
+    })
+    .on("error", (err) => {
+      io.emit("failed", { success: false, message: "Process failed" });
+      console.error("FFmpeg Error:", err.message);
     })
     .run();
 });
@@ -459,5 +545,5 @@ export {
   audioFromVideo,
   fetchaudio,
   compress,
-  convertVideo
+  convertVideo,
 };

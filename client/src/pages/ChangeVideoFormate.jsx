@@ -9,6 +9,7 @@ import ReactPlayer from "react-player";
 import { axiosInstance } from "@/lib/AxiosInstance";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
+import Progress from "../components/Progress";
 const ChangeVideoFormate = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [url, setUrl] = useState("");
@@ -20,88 +21,32 @@ const ChangeVideoFormate = () => {
   const [formate, setFormate] = useState("mp4");
   console.log(formate);
 
-  const handleVideo = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors("");
-
     if (!videoFile) {
-      setErrors("Video File required!");
+      toast.error("Video File required . . . . !");
       return;
-    } else {
+    }
+    try {
+      setLoading(true);
+      const form = new FormData();
       form.append("video", videoFile[0]);
       form.append("formate", formate);
-    }
-
-    try {
-      console.log(form);
-      setLoading(true);
-      setProgress(0);
-      const response = await axiosInstance.post(
-        `/api/videos/video-formate`,
-        form
-      );
-      console.log(response.data);
-
-      const link = response.data.url;
-
-      console.log("URL : ", link);
-      if (link) {
-        setProgress(4);
-      }
+      const { data } = await axiosInstance.post("/api/videos/convertVideo", form, {
+        responseType: "blob",
+      });
+      const link = URL.createObjectURL(data);
+      console.log("Link : ", link);
       setUrl(link);
-    } catch (error) {
-      console.error(error);
-      setErrors("Something went wrong while processing the video.");
-    } finally {
+      if (link) {
+        toast("Process successfull enjoy.");
+      }
       setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.warning("Process failed");
     }
   };
-  console.log(progress);
-
-  useEffect(() => {
-    if (errors) {
-      toast.warning(errors,{duration:5000});
-    }
-  }, [errors, handleVideo]);
-
-  useEffect(() => {
-    socket.on("videoFormate:videoFile:valid", () => setProgress(1));
-    socket.on("videoFormate:videoFile:invalid", (data) => {
-      setErrors(data.message);
-      setProgress(-1);
-    });
-    socket.on("videoFormate:process:valid", () => setProgress(2));
-    socket.on("videoFormate:process:invalid", (data) => {
-      setErrors(data.message);
-      setProgress(-2);
-    });
-    socket.on("videoFormate:sending:valid", () => setProgress(3));
-    socket.on("videoFormate:sending:invalid", (data) => {
-      setProgress(-3);
-      setErrors(data.message);
-    });
-    socket.on("videoFormate:done:valid", () => setProgress(4));
-
-    return () => {
-      socket.off("videoFormate:videoFile:valid", () => setProgress(1));
-      socket.off("videoFormate:videoFile:invalid", (data) => {
-        setErrors(data.message);
-        setProgress(-1);
-      });
-      socket.off("videoFormate:process:valid", () => setProgress(2));
-      socket.off("videoFormate:process:invalid", (data) => {
-        setErrors(data.message);
-        setProgress(-2);
-      });
-      socket.off("videoFormate:sending:valid", () => setProgress(3));
-      socket.off("videoFormate:sending:invalid", (data) => {
-        setProgress(-3);
-        setErrors(data.message);
-      });
-      socket.off("videoFormate:done:valid", () => setProgress(4));
-    };
-  }, [socket]);
-
   const handleVideoDownload = (url) => {
     saveAs(url, "Video");
   };
@@ -110,44 +55,9 @@ const ChangeVideoFormate = () => {
       <h1 className="text-center font-semibold capitalize text-xl sm:text-2xl md:text-3xl">
         Upload and Video File
       </h1>
-
-      <div className="flex justify-between text-[9px] text-center py-5">
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -1 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Valid Video
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -2 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Checking
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center ${
-            progress >= 1 ? "bg-blue-600 transition-all duration-700" : ""
-          } ${progress == -3 && "bg-red-600 transition-all duration-700"} 
-          `}
-        >
-          Processing
-        </div>
-        <div
-          className={`border p-1 rounded-full size-14 grid place-items-center  ${
-            progress == 4 && "bg-green-600 transition-all duration-700"
-          }`}
-        >
-          Done
-        </div>
-      </div>
-
-      <form onSubmit={handleVideo} className="relative w-full">
+      <Progress />
+      <form onSubmit={handleSubmit} className="relative w-full">
         <input
-          placeholder="YouTube URL"
           className="bg-transparent border p-2 rounded-lg w-full outline-none"
           type="file"
           onChange={(e) => {
