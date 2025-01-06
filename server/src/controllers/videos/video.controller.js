@@ -6,6 +6,7 @@ import { io } from "../../../index.js";
 import { connectDB } from "../../db/index.js";
 import ffmpeg from "fluent-ffmpeg";
 import path from "path";
+import ytdl from "ytdl-core";
 
 const ytUrl = asycnHandler(async (req, res) => {
   const user = req.user;
@@ -538,6 +539,72 @@ const convertVideo = asycnHandler(async (req, res) => {
     .run();
 });
 
+const ytVideo = asycnHandler(async (req, res) => {
+  const { link } = req.body;
+  if (link) {
+    io.emit("file:reached:valid", {
+      message: "Link received.",
+      success: true,
+    });
+  } else {
+    io.emit("file:reached:invalid", {
+      message: "Link Not received.",
+      success: false,
+    });
+    return res.status(400).json({
+      message: "Link file is required!",
+      success: false,
+    });
+  }
+  const outputDir = "./public";
+  const command = `yt-dlp --print-json -o "${outputDir}/%(title)s.%(ext)s" ${link}`;
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error("Error downloading video:", stderr);
+      return res.status(500).json({ message: "Error downloading video" });
+    }
+
+    try {
+      // Parse the JSON output to get the video title and extension
+      const videoDetails = JSON.parse(stdout);
+      const videoFilename = `${videoDetails.title}.${videoDetails.ext}`;
+      const videoPath = path.join(dirname, videoFilename);
+
+      console.log("Video downloaded:", videoPath);
+
+      io.emit("process:began", {
+        message: "Process Began with uplaoded resporces please wait......!",
+        success: true,
+      });
+      res.sendFile(videoPath, async (err) => {
+        io.emit("done", { success: true, message: "File Sent Successfully." });
+        const response = await uploadOnCloudinary(
+          `${outputDir}/${videoFilename}`
+        );
+        if (response?.url) {
+          io.emit("upload:on:cloud", {
+            success: true,
+            message: "File Uploaded on Cloud",
+            url: response?.secure_url,
+          });
+        }
+        if (fs.existsSync(`./public/${videoFilename}`))
+          fs.unlinkSync(`./public/${videoFilename}`);
+        if (err) {
+          res.status(500).json({ message: "Error sending video file" });
+          io.emit("failed", { success: false, message: "Process failed" });
+        }
+      });
+    } catch (parseError) {
+      io.emit("failed", { success: false, message: "Process failed" });
+      if (fs.existsSync(`./public/${videoDetails.title}.${videoDetails.ext}`))
+        fs.unlinkSync(`./public/${videoDetails.title}.${videoDetails.ext}`);
+      console.error("Error parsing JSON:", parseError);
+      res.status(500).json({ message: "Error processing video details" });
+    }
+  });
+});
+
 export {
   videoFormate,
   ytUrl,
@@ -546,4 +613,5 @@ export {
   fetchaudio,
   compress,
   convertVideo,
+  ytVideo,
 };

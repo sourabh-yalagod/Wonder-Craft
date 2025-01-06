@@ -7,6 +7,7 @@ import {
   fetchaudio,
   videoFormate,
   ytUrl,
+  ytVideo,
 } from "../controllers/videos/video.controller.js";
 import { upload } from "../utilities/multer.js";
 import { validateAuth } from "../middleweres/auth.js";
@@ -18,14 +19,14 @@ router.route("/yt-url").post(validateAuth, ytUrl);
 // -------------------------------------------
 
 router
-.route("/video-formate")
-.post(upload.single("video"), validateAuth, videoFormate);
+  .route("/video-formate")
+  .post(upload.single("video"), validateAuth, videoFormate);
 router
-.route("/video-compressor")
-.post(upload.single("video"), validateAuth, compressVideo);
+  .route("/video-compressor")
+  .post(upload.single("video"), validateAuth, compressVideo);
 router
-.route("/audio-from-video")
-.post(upload.single("video"), validateAuth, audioFromVideo);
+  .route("/audio-from-video")
+  .post(upload.single("video"), validateAuth, audioFromVideo);
 
 // -------------------------------------------
 
@@ -37,4 +38,5 @@ router.route("/compress").post(upload.single("video"), validateAuth, compress);
 router
   .route("/convertVideo")
   .post(upload.single("video"), validateAuth, convertVideo);
+router.route("/url").post(ytVideo);
 export default router;
